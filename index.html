@@ -1275,17 +1275,29 @@
   const FALLBACK_THEME = /* THEME_FALLBACK_START */ {
     "id": "tiyanstore-rimuru",
     "name": "Tiyanstore · Rimuru",
-    "description": "Background anime Rimuru Tempest — QR kiri; di bawah label NOMINAL ada nominal, nama toko, lalu kota",
+    "description": "Background anime Rimuru Tempest — QR kiri dengan logo di tengah; di bawah label NOMINAL ada nominal, nama toko, lalu kota",
     "type": "image",
-    "image": "tiyanstore-rimuru.jpg",
+    "image": "tiyanstore-rimuru-bg.png",
     "width": 1448,
     "height": 1086,
     "qr": {
-      "x": 150,
+      "x": 160,
       "y": 278,
-      "size": 450,
-      "padding": 14,
-      "radius": 4
+      "size": 442,
+      "cover": {
+        "x": 148,
+        "y": 278,
+        "w": 465,
+        "h": 442
+      },
+      "padding": 12,
+      "radius": 0,
+      "logo": {
+        "image": "tiyanstore-logo.png",
+        "scale": 0.24,
+        "radius": 10,
+        "border": 8
+      }
     },
     "nominal": {
       "x": 325,
@@ -1337,6 +1349,7 @@
   let customBgImage = null;     /* HTMLImageElement yang sudah loaded */
   let customQrPos = 'center';
   const themeImageCache = new Map();  /* id → HTMLImageElement */
+  const themeLogoCache = new Map();   /* id → HTMLImageElement logo tengah QR */
 
   function loadImage(url){
     return new Promise((resolve, reject) => {
@@ -1419,6 +1432,21 @@
     const img = await loadImage(THEME_BASE + theme.image);
     themeImageCache.set(theme.id, img);
     return img;
+  }
+
+  /* Logo tengah QR milik tema (opsional). Gagal dimuat → kartu tetap dibuat
+     tanpa logo, bukan gagal total. */
+  async function ensureThemeLogo(theme){
+    if (!theme || theme.type !== 'image' || !theme.qr || !theme.qr.logo || !theme.qr.logo.image) return null;
+    if (themeLogoCache.has(theme.id)) return themeLogoCache.get(theme.id);
+    try {
+      const img = await loadImage(THEME_BASE + theme.qr.logo.image);
+      themeLogoCache.set(theme.id, img);
+      return img;
+    } catch (err) {
+      themeLogoCache.set(theme.id, null);
+      return null;
+    }
   }
 
   async function initThemes(){
@@ -1974,10 +2002,13 @@
         return;
       }
       if (myRun !== runId) return;
+      const logoImage = await ensureThemeLogo(theme);
+      if (myRun !== runId) return;
       const dataUrl = CORE.THEME.compose({
         text: built.qrisString,
         theme: theme,
         background: background,
+        logo: logoImage,
         amount: amount,
         merchantName: built.merchantName,
         merchantCity: built.merchantCity,

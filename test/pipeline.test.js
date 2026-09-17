@@ -3,7 +3,27 @@ const assert = require('assert');
 const { test } = require('./t.js');
 const h = require('./helpers.js');
 
-const { CORE, readFixture, readPng, readJpeg, readHeif, matrixToImage, scan, createCanvas, canvasToImageData } = h;
+const { CORE, readFixture, readPng, readJpeg, readHeif, readThemeImage, matrixToImage, scan, createCanvas, canvasToImageData } = h;
+
+/* Background & logo tema → objek ala ImageData yang dipahami mock canvas */
+function muatAsetTema(theme) {
+  const path = require('path');
+  const bg = readThemeImage(path.join(h.ROOT, 'assets', 'themes', theme.image));
+  const background = Object.assign({
+    width: bg.width, height: bg.height,
+    naturalWidth: bg.width, naturalHeight: bg.height,
+    data: bg.data,
+  }, { _data: bg.data });
+  let logo;
+  if (theme.qr && theme.qr.logo && theme.qr.logo.image) {
+    const lg = readThemeImage(path.join(h.ROOT, 'assets', 'themes', theme.qr.logo.image));
+    logo = Object.assign({
+      width: lg.width, height: lg.height,
+      naturalWidth: lg.width, naturalHeight: lg.height,
+    }, { _data: lg.data });
+  }
+  return { background, logo };
+}
 const SAMPLE = '00020101021126670012ID.CO.BCA.MI01219881234567890123456780215ID10200299009000303UKE51440014ID.CO.QRIS.WWW0215ID20190000000010303UKE5204599953033605802ID5922WARUNG MAKAN SEDERHANA6007BANDUNG61054012362070703A01630492AE';
 
 test('PNG contoh (690×690): payload QRIS terbaca', async () => {
@@ -89,16 +109,14 @@ test('Kartu Rimuru (tema bawaan): QR + nominal ditempel, kartu tetap terbaca', a
   const theme = meta.themes.find(t => t.id === 'tiyanstore-rimuru');
   assert.ok(theme, 'kartu Rimuru ada di katalog');
 
-  /* background asli dari berkas tema (jalur yang sama dengan halaman) */
-  const bg = readJpeg(path.join(h.ROOT, 'assets', 'themes', theme.image));
+  /* background + logo tengah asli dari berkas tema (jalur yang sama dengan halaman) */
+  const aset = muatAsetTema(theme);
   const built = CORE.EMV.makeDynamic(SAMPLE, '75000');
   const dataUrl = CORE.THEME.compose({
     text: built.qrisString,
     theme,
-    background: Object.assign({
-      width: bg.width, height: bg.height,
-      naturalWidth: bg.width, naturalHeight: bg.height,
-    }, { _data: bg.data }),
+    background: aset.background,
+    logo: aset.logo,
     amount: '75000',
     merchantName: built.merchantName,
     merchantCity: built.merchantCity,
@@ -137,17 +155,16 @@ test('Kartu Rimuru: nominal tepat di bawah label NOMINAL, lalu toko, lalu kota',
     path.join(h.ROOT, 'assets', 'themes', 'themes.json'), 'utf8'
   ));
   const theme = meta.themes.find(t => t.id === 'tiyanstore-rimuru');
-  const bg = readJpeg(path.join(h.ROOT, 'assets', 'themes', theme.image));
+  const aset = muatAsetTema(theme);
+  const bg = aset.background;
   const built = CORE.EMV.makeDynamic(SAMPLE, '75000');
 
   let kanvas = null;
   const dataUrl = CORE.THEME.compose({
     text: built.qrisString,
     theme,
-    background: Object.assign({
-      width: bg.width, height: bg.height,
-      naturalWidth: bg.width, naturalHeight: bg.height,
-    }, { _data: bg.data }),
+    background: bg,
+    logo: aset.logo,
     amount: '75000',
     merchantName: built.merchantName,
     merchantCity: built.merchantCity,

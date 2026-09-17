@@ -36,6 +36,13 @@ function readFixture(name) {
   throw new Error('Pembaca gambar uji belum ada untuk ' + name);
 }
 
+/* Gambar tema (background/logo) — format mengikuti ekstensi berkas */
+function readThemeImage(file) {
+  if (file.endsWith('.png')) return readPng(file);
+  if (file.endsWith('.jpg') || file.endsWith('.jpeg')) return readJpeg(file);
+  throw new Error('Pembaca gambar uji belum ada untuk ' + file);
+}
+
 /* --- dekoder HEIC/HEIF/AVIF: memakai berkas vendor yang sama dengan halaman --- */
 let heifModulePromise = null;
 function heifModule() {
@@ -341,6 +348,6 @@ function canvasToImageData(dataUrl) {
 }
 
 module.exports = {
-  ROOT, FIXTURES, CORE, readPng, readJpeg, readFixture, readHeif,
+  ROOT, FIXTURES, CORE, readPng, readJpeg, readFixture, readThemeImage, readHeif,
   matrixToImage, scan, toMasked, createCanvas, canvasToImageData,
 };

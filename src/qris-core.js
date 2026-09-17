@@ -36,6 +36,22 @@
     return fn;
   }
 
+  /* Path persegi membulat (dipakai drawMatrix, slot QR, dan logo tengah) */
+  function roundRectPath(ctx, x, y, w, h, r) {
+    r = Math.max(0, Math.min(r, w / 2, h / 2));
+    ctx.beginPath();
+    if (typeof ctx.roundRect === 'function') {
+      ctx.roundRect(x, y, w, h, r);
+    } else {
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+  }
+
   /* ==================================================================== */
   /* PROBE — identifikasi format dari magic bytes                          */
   /* ==================================================================== */
@@ -879,36 +895,35 @@
       const light = opts.light || '#ffffff';
       const radius = opts.radius || 0;
       const count = matrix.count;
-      const cell = size / (count + quiet * 2);
+      const total = count + quiet * 2;
+      /* Presisi: origin & ukuran dibulatkan ke piksel utuh dulu. */
+      const px = Math.round(x);
+      const py = Math.round(y);
+      const ps = Math.round(size);
+      const cellF = ps / total;
 
       ctx.save();
       if (radius > 0) {
-        const r = Math.min(radius, size / 2);
-        ctx.beginPath();
-        if (typeof ctx.roundRect === 'function') {
-          ctx.roundRect(x, y, size, size, r);
-        } else {
-          ctx.moveTo(x + r, y);
-          ctx.arcTo(x + size, y, x + size, y + size, r);
-          ctx.arcTo(x + size, y + size, x, y + size, r);
-          ctx.arcTo(x, y + size, x, y, r);
-          ctx.arcTo(x, y, x + size, y, r);
-          ctx.closePath();
-        }
+        roundRectPath(ctx, px, py, ps, ps, Math.min(radius, ps / 2));
         ctx.clip();
       }
       ctx.fillStyle = light;
-      ctx.fillRect(x, y, size, size);
+      ctx.fillRect(px, py, ps, ps);
+      /*
+        Modul rata & presisi: batas tiap modul dihitung dengan Math.round dari
+        posisi idealnya, jadi antar-modul TIDAK ada celah/overlap (tidak bolong
+        atau gompel) dan lebarnya seragam (selisih maksimal 1px hanya bila
+        ukuran tidak habis dibagi — tepi tetap tajam, tanpa anti-alias abu-abu).
+      */
       ctx.fillStyle = dark;
       for (let r = 0; r < count; r++) {
+        const y0 = py + Math.round((r + quiet) * cellF);
+        const y1 = py + Math.round((r + 1 + quiet) * cellF);
         for (let c = 0; c < count; c++) {
           if (matrix.isDark(r, c)) {
-            ctx.fillRect(
-              x + (c + quiet) * cell,
-              y + (r + quiet) * cell,
-              cell + 0.6,
-              cell + 0.6
-            );
+            const x0 = px + Math.round((c + quiet) * cellF);
+            const x1 = px + Math.round((c + 1 + quiet) * cellF);
+            ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
           }
         }
       }
@@ -1178,7 +1193,11 @@
     compose(opts) {
       opts = opts || {};
       const theme = opts.theme || {};
-      const matrix = opts.matrix || RENDER.matrix(opts.text, opts.ecLevel || 'M');
+      const qrTheme = theme && theme.qr;
+      /* Logo tengah menutup sebagian modul → pakai koreksi kesalahan tertinggi
+         ('H' ≈ 30% pemulihan) supaya QR tetap terpindai. */
+      const ecLevel = opts.ecLevel || ((qrTheme && qrTheme.logo) ? 'H' : 'M');
+      const matrix = opts.matrix || RENDER.matrix(opts.text, ecLevel);
       const createCanvas = opts.createCanvas || function () {
         if (typeof document === 'undefined') throw new Error('Canvas tidak tersedia');
         return document.createElement('canvas');
@@ -1225,11 +1244,23 @@
         ctx.fillRect(0, 0, width, height);
       }
 
+      /*
+        cover (opsional): persegi yang WAJIB ditutup putih penuh sebelum QR
+        digambar — dipakai bila artwork background memuat contoh QR cetakan.
+        Koordinatnya presisi mengikuti tepi kotak putih artwork supaya tidak
+        ada sisa modul cetakan yang mengintip (gompel/bolong di pinggir).
+      */
+      if (qrSpec.cover) {
+        const cv = qrSpec.cover;
+        ctx.fillStyle = qrSpec.light || '#ffffff';
+        ctx.fillRect(Math.round(cv.x), Math.round(cv.y), Math.round(cv.w), Math.round(cv.h));
+      }
+
       /* slot QR: isi putih dulu, lalu gambar modul */
       const pad = qrSpec.padding === undefined ? 0 : qrSpec.padding;
-      const slotX = qrSpec.x;
-      const slotY = qrSpec.y;
-      const slotSize = qrSpec.size;
+      const slotX = Math.round(qrSpec.x);
+      const slotY = Math.round(qrSpec.y);
+      const slotSize = Math.round(qrSpec.size);
       const inner = Math.max(8, slotSize - pad * 2);
       const qrX = slotX + (slotSize - inner) / 2;
       const qrY = slotY + (slotSize - inner) / 2;
@@ -1237,17 +1268,7 @@
       ctx.save();
       const radius = qrSpec.radius || 0;
       if (radius > 0) {
-        const r = Math.min(radius, slotSize / 2);
-        ctx.beginPath();
-        if (typeof ctx.roundRect === 'function') ctx.roundRect(slotX, slotY, slotSize, slotSize, r);
-        else {
-          ctx.moveTo(slotX + r, slotY);
-          ctx.arcTo(slotX + slotSize, slotY, slotX + slotSize, slotY + slotSize, r);
-          ctx.arcTo(slotX + slotSize, slotY + slotSize, slotX, slotY + slotSize, r);
-          ctx.arcTo(slotX, slotY + slotSize, slotX, slotY, r);
-          ctx.arcTo(slotX, slotY, slotX + slotSize, slotY, r);
-          ctx.closePath();
-        }
+        roundRectPath(ctx, slotX, slotY, slotSize, slotSize, Math.min(radius, slotSize / 2));
         ctx.clip();
       }
       ctx.fillStyle = qrSpec.light || '#ffffff';
@@ -1260,6 +1281,36 @@
         dark: (qrSpec.dark || '#000000'),
         light: qrSpec.light || '#ffffff',
       });
+
+      /*
+        Logo tengah (opsional): kotak putih membulat + gambar logo diclip
+        persegi, tepat di pusat QR. opts.logo = HTMLImageElement/canvas.
+      */
+      const logoSpec = qrSpec.logo;
+      if (logoSpec && opts.logo) {
+        const logoSize = Math.max(24, Math.round(inner * (logoSpec.scale || 0.22)));
+        const border = logoSpec.border === undefined
+          ? Math.max(4, Math.round(logoSize * 0.12))
+          : Math.max(0, Math.round(logoSpec.border));
+        const cx = qrX + inner / 2;
+        const cy = qrY + inner / 2;
+        const bw = logoSize + border * 2;
+        const bx = Math.round(cx - bw / 2);
+        const by = Math.round(cy - bw / 2);
+        ctx.save();
+        roundRectPath(ctx, bx, by, bw, bw, (logoSpec.radius || 0) + border);
+        ctx.clip();
+        ctx.fillStyle = qrSpec.light || '#ffffff';
+        ctx.fillRect(bx, by, bw, bw);
+        ctx.restore();
+        const lx = bx + border;
+        const ly = by + border;
+        ctx.save();
+        roundRectPath(ctx, lx, ly, logoSize, logoSize, logoSpec.radius || 0);
+        ctx.clip();
+        ctx.drawImage(opts.logo, lx, ly, logoSize, logoSize);
+        ctx.restore();
+      }
 
       /*
         Blok teks kartu — urutannya SELALU dari atas ke bawah:

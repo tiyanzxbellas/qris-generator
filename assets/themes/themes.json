@@ -1,20 +1,32 @@
 {
-  "version": 2,
+  "version": 3,
   "themes": [
     {
       "id": "tiyanstore-rimuru",
       "name": "Tiyanstore · Rimuru",
-      "description": "Background anime Rimuru Tempest — QR kiri; di bawah label NOMINAL ada nominal, nama toko, lalu kota",
+      "description": "Background anime Rimuru Tempest — QR kiri dengan logo di tengah; di bawah label NOMINAL ada nominal, nama toko, lalu kota",
       "type": "image",
-      "image": "tiyanstore-rimuru.jpg",
+      "image": "tiyanstore-rimuru-bg.png",
       "width": 1448,
       "height": 1086,
       "qr": {
-        "x": 150,
+        "x": 160,
         "y": 278,
-        "size": 450,
-        "padding": 14,
-        "radius": 4
+        "size": 442,
+        "cover": {
+          "x": 148,
+          "y": 278,
+          "w": 465,
+          "h": 442
+        },
+        "padding": 12,
+        "radius": 0,
+        "logo": {
+          "image": "tiyanstore-logo.png",
+          "scale": 0.24,
+          "radius": 10,
+          "border": 8
+        }
       },
       "nominal": {
         "x": 325,
