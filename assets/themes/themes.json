@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "themes": [
+    {
+      "id": "tiyanstore-rimuru",
+      "name": "Tiyanstore · Rimuru",
+      "description": "Background anime Rimuru Tempest — QR kiri; di bawah label NOMINAL ada nominal, nama toko, lalu kota",
+      "type": "image",
+      "image": "tiyanstore-rimuru.jpg",
+      "width": 1448,
+      "height": 1086,
+      "qr": {
+        "x": 150,
+        "y": 278,
+        "size": 450,
+        "padding": 14,
+        "radius": 4
+      },
+      "nominal": {
+        "x": 325,
+        "y": 980,
+        "align": "center",
+        "maxWidth": 360,
+        "fontSize": 52,
+        "color": "#FFFFFF",
+        "strokeColor": "#00B4FF",
+        "strokeWidth": 5,
+        "prefix": "Rp ",
+        "shadow": true
+      },
+      "merchant": {
+        "enabled": true,
+        "name": {
+          "x": 325,
+          "y": 1035,
+          "align": "center",
+          "maxWidth": 320,
+          "fontSize": 26,
+          "color": "#FFFFFF",
+          "strokeColor": "rgba(0,80,140,0.75)",
+          "strokeWidth": 3,
+          "shadow": true,
+          "fontWeight": "700",
+          "transform": "uppercase"
+        },
+        "city": {
+          "x": 325,
+          "y": 1066,
+          "align": "center",
+          "maxWidth": 300,
+          "fontSize": 20,
+          "color": "rgba(180,230,255,0.92)",
+          "strokeColor": "rgba(0,40,80,0.7)",
+          "strokeWidth": 2,
+          "shadow": true,
+          "fontWeight": "500"
+        }
+      },
+      "thumb": "tiyanstore-rimuru.thumb.jpg"
+    }
+  ]
+}

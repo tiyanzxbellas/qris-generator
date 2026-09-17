@@ -1,0 +1,2018 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QRIS Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* ---- Color tokens : black / green / blue ---- */
+    --void:        #050a08;
+    --deep-a:      #07120f;
+    --deep-b:      #061019;
+    --surface:     rgba(255,255,255,.045);
+    --surface-2:   rgba(255,255,255,.07);
+    --line:        rgba(255,255,255,.09);
+    --line-soft:   rgba(255,255,255,.05);
+
+    --green:       #00ffa3;
+    --green-dim:   #00b377;
+    --green-glow:  rgba(0,255,163,.35);
+
+    --blue:        #2dd4ff;
+    --blue-dim:    #0ea5c4;
+    --blue-glow:   rgba(45,212,255,.32);
+
+    --text:        #eafff5;
+    --text-muted:  rgba(234,255,245,.56);
+    --text-faint:  rgba(234,255,245,.32);
+
+    --error:       #ff6b78;
+    --error-glow:  rgba(255,107,120,.25);
+
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-mono:    'JetBrains Mono', monospace;
+
+    --ease: cubic-bezier(.22,.9,.32,1);
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+
+  html,body{ height:100%; }
+
+  body{
+    font-family: var(--font-display);
+    color: var(--text);
+    background:
+      radial-gradient(circle at 18% 12%, rgba(0,255,163,.10), transparent 45%),
+      radial-gradient(circle at 86% 78%, rgba(45,212,255,.12), transparent 50%),
+      linear-gradient(160deg, var(--deep-b) 0%, var(--void) 45%, var(--deep-a) 100%);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ============ PRELOADER ============ */
+  .preloader{
+    position: fixed; inset: 0; z-index: 999;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap: 22px;
+    background: var(--void);
+    transition: opacity .55s var(--ease), visibility .55s var(--ease);
+  }
+  .preloader.hide{ opacity:0; visibility:hidden; pointer-events:none; }
+
+  .pl-grid{
+    display:grid;
+    grid-template-columns: repeat(3, 14px);
+    grid-template-rows: repeat(3, 14px);
+    gap: 6px;
+  }
+  .pl-grid span{
+    width:14px; height:14px; border-radius:3px;
+    background: var(--surface-2);
+    box-shadow: 0 0 0 1px var(--line-soft) inset;
+    animation: pl-pulse 1.4s ease-in-out infinite;
+  }
+  .pl-grid span:nth-child(1){ animation-delay: 0s; }
+  .pl-grid span:nth-child(2){ animation-delay: .07s; }
+  .pl-grid span:nth-child(3){ animation-delay: .14s; }
+  .pl-grid span:nth-child(4){ animation-delay: .21s; }
+  .pl-grid span:nth-child(5){ animation-delay: .28s; }
+  .pl-grid span:nth-child(6){ animation-delay: .35s; }
+  .pl-grid span:nth-child(7){ animation-delay: .42s; }
+  .pl-grid span:nth-child(8){ animation-delay: .49s; }
+  .pl-grid span:nth-child(9){ animation-delay: .56s; }
+
+  @keyframes pl-pulse{
+    0%, 100%{ background: var(--surface-2); box-shadow: 0 0 0 1px var(--line-soft) inset; }
+    35%{ background: var(--green); box-shadow: 0 0 14px var(--green-glow); }
+    65%{ background: var(--blue); box-shadow: 0 0 14px var(--blue-glow); }
+  }
+
+  .pl-label{
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: .35em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+  .pl-label b{
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  /* ============ APP SHELL ============ */
+  .app{
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity .6s var(--ease), transform .6s var(--ease);
+    min-height: 100vh;
+    display:flex; justify-content:center; align-items:center;
+    padding: 32px 20px;
+    position: relative;
+  }
+  .app.show{ opacity:1; transform: translateY(0); }
+
+  /* ambient background grid, decorative */
+  .bg-fx{
+    position: fixed; inset:0; z-index:0; pointer-events:none;
+    background-image:
+      linear-gradient(var(--line-soft) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+    background-size: 42px 42px;
+    -webkit-mask-image: radial-gradient(circle at 50% 30%, black, transparent 70%);
+            mask-image: radial-gradient(circle at 50% 30%, black, transparent 70%);
+    opacity: .35;
+  }
+
+  .container{
+    position: relative; z-index: 1;
+    width: 100%; max-width: 480px;
+  }
+
+  /* ============ HEADER ============ */
+  .header{ text-align:center; margin-bottom: 26px; }
+  .logo{
+    width: 46px; height: 46px; margin: 0 auto 14px;
+    display:grid; grid-template-columns: repeat(3,1fr); grid-template-rows: repeat(3,1fr);
+    gap: 3px;
+  }
+  .logo span{ border-radius: 2px; background: var(--surface-2); }
+  .logo span:nth-child(1), .logo span:nth-child(3),
+  .logo span:nth-child(7){ background: var(--green); box-shadow: 0 0 8px var(--green-glow); }
+  .logo span:nth-child(9){ background: var(--blue); box-shadow: 0 0 8px var(--blue-glow); }
+
+  .header h1{
+    font-size: 23px; font-weight: 700; letter-spacing: -.01em;
+  }
+  .header p{
+    color: var(--text-muted); font-size: 13.5px; margin-top: 6px;
+  }
+
+  /* ============ STEPPER ============ */
+  .stepper{
+    display:flex; align-items:center; justify-content:center;
+    gap: 6px; margin-bottom: 22px;
+  }
+  .step{
+    display:flex; align-items:center; gap: 7px;
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--text-faint);
+    padding: 5px 10px; border-radius: 20px;
+    border: 1px solid var(--line-soft);
+    transition: all .35s var(--ease);
+  }
+  .step .num{
+    width: 14px; height:14px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 9px; border:1px solid currentColor;
+  }
+  .step.active{ color: var(--green); border-color: rgba(0,255,163,.3); background: rgba(0,255,163,.06); }
+  .step.done{ color: var(--blue); border-color: rgba(45,212,255,.3); background: rgba(45,212,255,.06); }
+  .step-line{ width: 16px; height: 1px; background: var(--line); }
+
+  /* ============ CARD ============ */
+  .card{
+    background: var(--surface);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  }
+
+  .form-group{ margin-bottom: 18px; }
+  .form-group:last-of-type{ margin-bottom: 0; }
+
+  label{
+    display:flex; align-items:center; gap: 6px;
+    font-size: 12.5px; font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 9px;
+    text-transform: uppercase; letter-spacing: .04em;
+  }
+  label .hint{
+    font-weight:400; text-transform:none; letter-spacing:0;
+    color: var(--text-faint); font-size: 11.5px;
+  }
+
+  /* nominal input with Rp prefix */
+  .nominal-field{
+    display:flex; align-items:stretch;
+    background: rgba(255,255,255,.05);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    overflow:hidden;
+    transition: border-color .25s var(--ease), box-shadow .25s var(--ease);
+  }
+  .nominal-field:focus-within{
+    border-color: var(--green);
+    box-shadow: 0 0 0 4px rgba(0,255,163,.1);
+  }
+  .nominal-field .prefix{
+    display:flex; align-items:center;
+    padding: 0 14px;
+    font-family: var(--font-mono); font-weight:600; font-size: 15px;
+    color: var(--green);
+    background: rgba(0,255,163,.06);
+    border-right: 1px solid var(--line-soft);
+  }
+  .nominal-field input{
+    flex:1; min-width:0;
+    border:none; background:transparent; outline:none;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 17px; font-weight: 600;
+    padding: 13px 14px;
+  }
+  .nominal-field input::placeholder{ color: var(--text-faint); font-weight:400; }
+
+  /* tabs */
+  .tabs{
+    display:flex; gap: 6px; margin-bottom: 12px;
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--line-soft);
+    border-radius: 12px; padding: 4px;
+  }
+  .tab{
+    flex:1; padding: 9px 10px; border:none; border-radius: 9px;
+    background:transparent; color: var(--text-faint);
+    font-family: var(--font-display); font-size: 13px; font-weight: 600;
+    cursor:pointer; transition: all .25s var(--ease);
+  }
+  .tab.active{
+    background: linear-gradient(120deg, rgba(0,255,163,.16), rgba(45,212,255,.16));
+    color: var(--text);
+    box-shadow: 0 0 0 1px var(--line-soft) inset;
+  }
+  .tab-panel[hidden]{ display:none; }
+
+  input[type="url"]{
+    width:100%; padding: 13px 14px;
+    background: rgba(255,255,255,.05);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    transition: all .25s var(--ease);
+  }
+  input[type="url"]:focus{
+    outline:none; border-color: var(--blue);
+    box-shadow: 0 0 0 4px rgba(45,212,255,.1);
+  }
+  input[type="url"]::placeholder{ color: var(--text-faint); }
+
+  .url-preview{
+    margin-top: 10px; display:none;
+    width: 100%; max-height: 130px; border-radius: 10px;
+    overflow:hidden; border: 1px solid var(--line-soft);
+  }
+  .url-preview img{ width:100%; height:100%; object-fit:contain; background:#fff; display:block; }
+
+  /* file dropzone */
+  .file-upload{
+    position: relative;
+    border: 1.5px dashed var(--line);
+    border-radius: 12px;
+    padding: 22px 16px;
+    text-align:center;
+    cursor:pointer;
+    background: rgba(255,255,255,.025);
+    transition: all .25s var(--ease);
+  }
+  .file-upload:hover{ border-color: var(--blue-dim); background: rgba(45,212,255,.05); }
+  .file-upload.drag{ border-color: var(--blue); background: rgba(45,212,255,.08); }
+  .file-upload.has-file{ border-color: var(--green); background: rgba(0,255,163,.05); }
+  .file-upload input[type="file"]{
+    position:absolute; inset:0; opacity:0; cursor:pointer;
+  }
+  .file-upload .file-icon{ font-size: 26px; margin-bottom: 8px; opacity:.8; }
+  .file-upload .file-text{ color: var(--text-muted); font-size: 13px; }
+  .file-upload .file-text small{ display:block; color: var(--text-faint); margin-top:3px; font-size: 11px; }
+  .file-preview{
+    display:none; align-items:center; gap: 10px; text-align:left;
+  }
+  .file-preview img{
+    width: 44px; height:44px; border-radius:8px; object-fit:cover; background:#fff;
+    border: 1px solid var(--line-soft);
+  }
+  .file-preview .meta{ overflow:hidden; flex:1; min-width:0; }
+  .file-preview .name{ color: var(--green); font-weight:600; font-size: 13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .file-preview .size{ color: var(--text-faint); font-size: 11px; font-family: var(--font-mono); }
+  .file-preview .file-actions{ display:flex; gap:6px; flex-shrink:0; }
+  .file-btn{
+    background: rgba(255,255,255,.06);
+    border: 1px solid var(--line);
+    color: var(--text-muted);
+    font-family: var(--font-mono); font-size: 11px;
+    padding: 6px 9px; border-radius: 8px; cursor:pointer;
+    transition: all .2s var(--ease);
+  }
+  .file-btn:hover{ background: rgba(255,255,255,.1); color: var(--text); }
+  .file-btn.danger:hover{ border-color: rgba(255,107,120,.5); color: var(--error); }
+  /*
+    Saat berkas sudah dipilih, input file TIDAK BOLEH display:none — teknik itu
+    membuat programmatic fileInput.click() (tombol Ganti) gagal/menghasilkan
+    File stale di beberapa browser mobile (khususnya saat file berasal dari
+    Google Photos/Drive/iCloud content:// URI). Pakai sr-only saja:
+    tidak terlihat, tidak mengambil ruang, tapi tetap "ada" untuk browser.
+  */
+  .file-upload.has-file input[type="file"]{
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap;
+    border: 0;
+    pointer-events: none; /* tapi tidak interaktif */
+  }
+  .file-upload.has-file{ cursor: default; }
+
+  .file-note{
+    margin-top: 8px;
+    font-family: var(--font-mono); font-size: 11px; line-height: 1.5;
+    color: var(--text-faint);
+    padding: 8px 10px; border-radius: 9px;
+    background: rgba(255,255,255,.03);
+    border-left: 3px solid var(--line);
+  }
+  .file-note.loading{ border-left-color: var(--blue); color: var(--text-muted); }
+  .file-note.ok{ border-left-color: var(--green-dim); color: rgba(0,255,163,.75); }
+  .file-note.error{ border-left-color: var(--error); color: var(--error); background: rgba(255,107,120,.06); }
+
+  /* ============ THEME PICKER ============ */
+  .theme-grid{
+    display:grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .theme-card{
+    position: relative;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    background: rgba(255,255,255,.03);
+    padding: 6px;
+    cursor: pointer;
+    text-align: center;
+    transition: all .25s var(--ease);
+    color: var(--text-muted);
+    font-family: var(--font-display);
+  }
+  .theme-card:hover{
+    border-color: var(--blue-dim);
+    background: rgba(45,212,255,.06);
+  }
+  .theme-card.active{
+    border-color: var(--green);
+    background: rgba(0,255,163,.08);
+    box-shadow: 0 0 0 1px rgba(0,255,163,.25) inset, 0 0 18px rgba(0,255,163,.12);
+    color: var(--text);
+  }
+  .theme-card .theme-thumb{
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    object-fit: cover;
+    background:
+      linear-gradient(135deg, rgba(0,255,163,.12), rgba(45,212,255,.12)),
+      #0a1210;
+    display:block;
+  }
+  .theme-card .theme-thumb.emoji{
+    display:flex; align-items:center; justify-content:center;
+    font-size: 28px;
+  }
+  .theme-card .theme-name{
+    display:block;
+    margin-top: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .theme-card .theme-check{
+    position:absolute; top: 8px; right: 8px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--green); color: #04130d;
+    font-size: 10px; font-weight: 700;
+    display:none; align-items:center; justify-content:center;
+    box-shadow: 0 0 8px var(--green-glow);
+  }
+  .theme-card.active .theme-check{ display:flex; }
+
+  .theme-custom{
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px dashed var(--line);
+    background: rgba(255,255,255,.025);
+  }
+  .theme-custom[hidden]{ display:none; }
+  .theme-custom .pos-row{
+    display:flex; gap: 6px; margin-top: 10px;
+  }
+  .pos-chip{
+    flex:1; padding: 8px 6px; border-radius: 9px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.04);
+    color: var(--text-faint);
+    font-family: var(--font-mono); font-size: 11px;
+    cursor: pointer; transition: all .2s var(--ease);
+  }
+  .pos-chip.active{
+    color: var(--text);
+    border-color: rgba(45,212,255,.4);
+    background: rgba(45,212,255,.1);
+  }
+  .theme-hint{
+    margin-top: 8px;
+    font-size: 11.5px; color: var(--text-faint);
+    line-height: 1.45;
+  }
+
+  .qris-frame.themed{
+    width: 100%;
+    max-width: 360px;
+    height: auto;
+    aspect-ratio: auto;
+    padding: 0;
+    background: transparent;
+    box-shadow: 0 0 0 1px var(--line-soft), 0 12px 40px rgba(0,0,0,.35);
+  }
+  .qris-frame.themed img{
+    width: 100%; height: auto; object-fit: contain; border-radius: 12px;
+  }
+  .qris-frame.themed .corner{ display:none; }
+
+  /* ketika info toko SUDAH ada di dalam gambar, teks luar disembunyikan */
+  .qris-display.info-baked .nominal-info,
+  .qris-display.info-baked .merchant-info{ display:none; }
+
+  .error-hints{
+    margin: 0 auto 14px; max-width: 340px; text-align: left;
+    background: rgba(255,107,120,.06);
+    border: 1px solid rgba(255,107,120,.22);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+  .error-hints-title{
+    font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--error); margin-bottom: 7px;
+  }
+  .error-hints ul{ list-style:none; display:grid; gap: 6px; }
+  .error-hints li{
+    position: relative; padding-left: 13px;
+    font-size: 12px; line-height: 1.5; color: var(--text-muted);
+  }
+  .error-hints li::before{
+    content: '→'; position:absolute; left:0; color: var(--error); font-size: 11px;
+  }
+
+  /* status */
+  .status-row{
+    display:flex; align-items:center; gap: 8px;
+    margin: 18px 0 14px;
+    font-family: var(--font-mono); font-size: 11.5px;
+  }
+  .status-dot{
+    width: 7px; height:7px; border-radius:50%;
+    background: var(--text-faint);
+  }
+  .status-row.idle .status-dot{ background: var(--text-faint); }
+  .status-row.loading .status-dot{ background: var(--blue); box-shadow: 0 0 8px var(--blue-glow); animation: dot-pulse 1s ease-in-out infinite; }
+  .status-row.success .status-dot{ background: var(--green); box-shadow: 0 0 8px var(--green-glow); }
+  .status-row.error .status-dot{ background: var(--error); box-shadow: 0 0 8px var(--error-glow); }
+  @keyframes dot-pulse{ 0%,100%{ opacity:1; transform:scale(1);} 50%{ opacity:.4; transform:scale(.7);} }
+  .status-row .status-text{ color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
+
+  /* button */
+  .btn{
+    width:100%; padding: 15px; border:none; border-radius: 13px;
+    background: linear-gradient(120deg, var(--green) 0%, var(--blue) 100%);
+    color: #04130d; font-family: var(--font-display);
+    font-size: 15px; font-weight: 700;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    transition: transform .2s var(--ease), box-shadow .2s var(--ease), opacity .2s;
+  }
+  .btn:hover{ transform: translateY(-2px); box-shadow: 0 14px 36px rgba(0,255,163,.22); }
+  .btn:active{ transform: translateY(0); }
+  .btn:disabled{ opacity:.55; cursor:not-allowed; transform:none; box-shadow:none; }
+
+  .btn-secondary{
+    background: rgba(255,255,255,.06);
+    color: var(--text);
+    border: 1px solid var(--line);
+  }
+  .btn-secondary:hover{ box-shadow: 0 10px 28px rgba(0,0,0,.3); background: rgba(255,255,255,.09); }
+
+  /* processing block (replaces button while loading) */
+  .processing{
+    display:none; align-items:center; gap: 14px;
+    padding: 13px 16px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid var(--line-soft);
+    border-radius: 13px;
+  }
+  .processing.show{ display:flex; }
+  .scan-grid{
+    flex-shrink:0;
+    display:grid; grid-template-columns: repeat(3,9px); grid-template-rows: repeat(3,9px);
+    gap: 4px;
+  }
+  .scan-grid span{ border-radius: 2px; background: var(--surface-2); animation: pl-pulse 1.2s ease-in-out infinite; }
+  .scan-grid span:nth-child(1){ animation-delay: 0s; }
+  .scan-grid span:nth-child(2){ animation-delay: .06s; }
+  .scan-grid span:nth-child(3){ animation-delay: .12s; }
+  .scan-grid span:nth-child(4){ animation-delay: .18s; }
+  .scan-grid span:nth-child(5){ animation-delay: .24s; }
+  .scan-grid span:nth-child(6){ animation-delay: .3s; }
+  .scan-grid span:nth-child(7){ animation-delay: .36s; }
+  .scan-grid span:nth-child(8){ animation-delay: .42s; }
+  .scan-grid span:nth-child(9){ animation-delay: .48s; }
+  .processing-text{ font-family: var(--font-mono); font-size: 12.5px; color: var(--text-muted); }
+
+  /* ============ RESULT ============ */
+  .response{ margin-top: 20px; display:none; }
+  .response.show{ display:block; animation: fade-up .5s var(--ease); }
+  @keyframes fade-up{ from{ opacity:0; transform: translateY(10px);} to{ opacity:1; transform:translateY(0);} }
+
+  .qris-display{
+    background: rgba(0,0,0,.35);
+    border-radius: 16px;
+    padding: 24px;
+    text-align:center;
+    border: 1px solid var(--line-soft);
+  }
+
+  .qris-frame{
+    width: 220px; height: 220px; margin: 0 auto 16px;
+    position: relative;
+    background: #fff;
+    border-radius: 14px;
+    padding: 10px;
+    box-shadow: 0 0 0 1px var(--line-soft), 0 0 40px rgba(0,255,163,.12);
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+  .qris-frame img{ width:100%; height:100%; object-fit:contain; }
+  .qris-frame .corner{
+    position:absolute; width: 16px; height:16px;
+    border-color: var(--green);
+    opacity: .9;
+  }
+  .qris-frame .corner.tl{ top:4px; left:4px; border-top:2px solid; border-left:2px solid; border-radius: 3px 0 0 0; }
+  .qris-frame .corner.tr{ top:4px; right:4px; border-top:2px solid; border-right:2px solid; border-radius: 0 3px 0 0; border-color: var(--blue); }
+  .qris-frame .corner.bl{ bottom:4px; left:4px; border-bottom:2px solid; border-left:2px solid; border-radius: 0 0 0 3px; border-color: var(--blue); }
+  .qris-frame .corner.br{ bottom:4px; right:4px; border-bottom:2px solid; border-right:2px solid; border-radius: 0 0 3px 0; }
+
+  .qris-placeholder{
+    width: 220px; min-height: 220px; margin: 0 auto 16px;
+    background: rgba(255,255,255,.04);
+    border: 1px dashed var(--line);
+    border-radius: 14px;
+    display:flex; align-items:center; justify-content:center;
+    color: var(--text-faint);
+    font-size: 13px; line-height: 1.55; padding: 18px; text-align:center;
+  }
+
+  .nominal-info{
+    font-family: var(--font-mono);
+    color: var(--green);
+    font-size: 26px; font-weight:700;
+    margin: 4px 0 10px;
+    text-shadow: 0 0 20px var(--green-glow);
+  }
+
+  .merchant-info h3{ font-size: 16px; font-weight:600; }
+  .merchant-info p{ color: var(--text-muted); font-size: 13px; margin-top: 3px; }
+
+  .action-row{
+    display:flex; gap: 8px; margin-top: 18px; flex-wrap:wrap;
+  }
+  .action-row .btn-secondary{ flex:1; min-width: 130px; padding: 11px; font-size: 13px; }
+  .action-row .btn-secondary.copied{ color: var(--green); border-color: rgba(0,255,163,.35); }
+
+  .toggle-raw{
+    background:none; border:none; color: var(--text-faint);
+    cursor:pointer; font-size: 11.5px; margin-top: 14px;
+    font-family: var(--font-mono);
+    text-decoration: underline; text-underline-offset: 3px;
+  }
+  .toggle-raw:hover{ color: var(--text-muted); }
+
+  .raw-response{
+    margin-top: 12px; padding: 14px;
+    background: rgba(0,0,0,.4);
+    border-radius: 10px;
+    border-left: 3px solid var(--blue);
+    text-align:left;
+  }
+  .raw-response.error{ border-left-color: var(--error); }
+  .raw-response pre{
+    color: rgba(255,255,255,.85);
+    font-size: 11.5px; font-family: var(--font-mono);
+    white-space:pre-wrap; word-wrap:break-word;
+    max-height: 200px; overflow-y:auto;
+  }
+
+  footer{
+    text-align:center; margin-top: 18px;
+    font-family: var(--font-mono); font-size: 10.5px;
+    color: var(--text-faint); letter-spacing:.04em;
+  }
+
+  ::selection{ background: rgba(0,255,163,.3); }
+
+  :focus-visible{
+    outline: 2px solid var(--green);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 480px){
+    .card{ padding: 22px 18px; }
+    .qris-frame{ width: 180px; height: 180px; }
+    .qris-frame.themed{ width: 100%; max-width: 100%; height: auto; }
+    .qris-placeholder{ width: 100%; max-width: 260px; min-height: 180px; }
+    .file-preview{ flex-wrap: wrap; }
+    .file-preview .file-actions{ width: 100%; }
+    .theme-grid{ grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- Preloader: shown before the page is ready / on refresh -->
+  <div class="preloader" id="preloader">
+    <div class="pl-grid">
+      <span></span><span></span><span></span>
+      <span></span><span></span><span></span>
+      <span></span><span></span><span></span>
+    </div>
+    <div class="pl-label">Memuat <b>QRIS</b> Generator</div>
+  </div>
+
+  <div class="bg-fx" aria-hidden="true"></div>
+
+  <div class="app" id="app">
+    <div class="container">
+
+      <div class="header">
+        <div class="logo" aria-hidden="true">
+          <span></span><span></span><span></span>
+          <span></span><span></span><span></span>
+          <span></span><span></span><span></span>
+        </div>
+        <h1>QRIS Generator</h1>
+        <p>QRIS dinamis + kartu Tiyanstore · Rimuru / upload sendiri</p>
+      </div>
+
+      <div class="stepper" id="stepper">
+        <div class="step active" data-step="1"><span class="num">1</span> Nominal</div>
+        <div class="step-line"></div>
+        <div class="step" data-step="2"><span class="num">2</span> Sumber QRIS</div>
+        <div class="step-line"></div>
+        <div class="step" data-step="3"><span class="num">3</span> Hasil</div>
+      </div>
+
+      <div class="card">
+        <form id="paymentForm" novalidate>
+
+          <!-- Nominal -->
+          <div class="form-group">
+            <label for="nominal">Nominal Pembayaran</label>
+            <div class="nominal-field">
+              <span class="prefix">Rp</span>
+              <input type="text" id="nominal" inputmode="numeric" placeholder="0" autocomplete="off" required>
+            </div>
+          </div>
+
+          <!-- Source tabs -->
+          <div class="form-group">
+            <label>Sumber Gambar QRIS</label>
+            <div class="tabs" role="tablist">
+              <button type="button" class="tab active" data-tab="upload" role="tab" aria-selected="true">📤 Upload File</button>
+              <button type="button" class="tab" data-tab="url" role="tab" aria-selected="false">🔗 URL Gambar</button>
+            </div>
+
+            <div class="tab-panel" data-panel="upload">
+              <div class="file-upload" id="fileDropzone">
+                <input type="file" id="fileInput" accept="image/*,.heic,.heif,.avif,.png,.jpg,.jpeg,.webp,.bmp,.gif">
+                <div id="fileEmpty">
+                  <div class="file-icon">🖼️</div>
+                  <div class="file-text">Klik atau seret gambar QRIS ke sini<small>PNG, JPG, WebP, HEIC (foto iPhone), atau AVIF</small></div>
+                </div>
+                <div class="file-preview" id="filePreview">
+                  <img id="filePreviewImg" alt="Pratinjau QRIS">
+                  <div class="meta">
+                    <div class="name" id="fileNameText">-</div>
+                    <div class="size" id="fileSizeText">-</div>
+                  </div>
+                  <div class="file-actions">
+                    <button type="button" class="file-btn" id="fileReplace">Ganti</button>
+                    <button type="button" class="file-btn danger" id="fileClear">Hapus</button>
+                  </div>
+                </div>
+              </div>
+              <div class="file-note" id="fileNote" hidden></div>
+            </div>
+
+            <div class="tab-panel" data-panel="url" hidden>
+              <input type="url" id="urlInput" placeholder="https://contoh.com/qris.png" autocomplete="off">
+              <div class="url-preview" id="urlPreview">
+                <img id="urlPreviewImg" alt="Pratinjau QRIS">
+              </div>
+            </div>
+          </div>
+
+          <!-- Theme picker -->
+          <div class="form-group">
+            <label>Tema Kartu QRIS <span class="hint">— Rimuru / upload sendiri</span></label>
+            <div class="theme-grid" id="themeGrid" role="listbox" aria-label="Pilih tema kartu">
+              <!-- diisi JS dari assets/themes/themes.json -->
+            </div>
+            <div class="theme-custom" id="themeCustom" hidden>
+              <div class="file-upload" id="bgDropzone">
+                <input type="file" id="bgInput" accept="image/*,.png,.jpg,.jpeg,.webp">
+                <div id="bgEmpty">
+                  <div class="file-icon">🎨</div>
+                  <div class="file-text">Unggah background sendiri<small>Anime, foto, atau desain kartu — QR ditempel, nominal + toko + kota dirapikan di bawahnya</small></div>
+                </div>
+                <div class="file-preview" id="bgPreview">
+                  <img id="bgPreviewImg" alt="Pratinjau background">
+                  <div class="meta">
+                    <div class="name" id="bgNameText">-</div>
+                    <div class="size" id="bgSizeText">-</div>
+                  </div>
+                  <div class="file-actions">
+                    <button type="button" class="file-btn" id="bgReplace">Ganti</button>
+                    <button type="button" class="file-btn danger" id="bgClear">Hapus</button>
+                  </div>
+                </div>
+              </div>
+              <div class="pos-row" id="bgPosRow" role="group" aria-label="Posisi QR">
+                <button type="button" class="pos-chip active" data-pos="center">Tengah</button>
+                <button type="button" class="pos-chip" data-pos="left">Kiri</button>
+                <button type="button" class="pos-chip" data-pos="right">Kanan</button>
+              </div>
+              <p class="theme-hint">Background kamu dipakai utuh. QR ditempel di posisi yang dipilih; di bawahnya berurutan nominal, nama toko, lalu kota/kabupaten.</p>
+            </div>
+            <p class="theme-hint" id="themeHint">QR dinamis + nominal, nama toko, dan kota ditempel ke kartu bergambar.</p>
+          </div>
+
+          <!-- Status -->
+          <div class="status-row idle" id="statusRow">
+            <span class="status-dot"></span>
+            <span class="status-text" id="statusText">Menunggu input</span>
+          </div>
+
+          <button type="submit" class="btn" id="submitBtn">⚡ Buat Kode QRIS</button>
+
+          <div class="processing" id="processing">
+            <div class="scan-grid">
+              <span></span><span></span><span></span>
+              <span></span><span></span><span></span>
+              <span></span><span></span><span></span>
+            </div>
+            <div class="processing-text" id="processingText">Menghubungkan ke server…</div>
+          </div>
+
+          <!-- Result -->
+          <div class="response" id="response" aria-live="polite">
+            <div class="qris-display" id="qrisDisplay">
+
+              <div class="qris-placeholder" id="qrisPlaceholder">
+                <span>QRIS akan muncul di sini</span>
+              </div>
+              <div class="qris-frame" id="qrisFrame" style="display:none;">
+                <span class="corner tl"></span><span class="corner tr"></span>
+                <span class="corner bl"></span><span class="corner br"></span>
+                <img id="qrisImg" src="" alt="Kode QRIS">
+              </div>
+
+              <div class="error-hints" id="errorHints" style="display:none;"></div>
+
+              <div class="nominal-info" id="nominalDisplay">Rp 0</div>
+
+              <div class="merchant-info">
+                <h3 id="merchantName">-</h3>
+                <p id="merchantCity">-</p>
+              </div>
+
+              <div class="action-row">
+                <button type="button" class="btn-secondary" id="copyBtn">📋 Salin String QRIS</button>
+                <button type="button" class="btn-secondary" id="downloadBtn">⬇️ Unduh Gambar</button>
+              </div>
+
+              <button type="button" class="toggle-raw" id="toggleRaw">Lihat respons JSON</button>
+            </div>
+
+            <div class="raw-response" id="rawResponse" style="display:none;">
+              <pre id="rawContent"></pre>
+            </div>
+          </div>
+
+        </form>
+      </div>
+
+      <footer>QRIS dinamis · diproses 100% di browser Anda · tanpa server</footer>
+    </div>
+  </div>
+
+<!-- Library lokal (tanpa CDN/API): decode QR & generate QR -->
+<script src="vendor/jsqr.min.js"></script>
+<script src="vendor/qrcode.min.js"></script>
+<script src="vendor/qrcode-utf8.js"></script>
+<!-- Logika inti (kenali format berkas, olah citra, pindai QR, EMV/CRC) -->
+<script src="src/qris-core.js"></script>
+<script>
+  /* ============ PRELOADER ============ */
+  (function(){
+    const preloader = document.getElementById('preloader');
+    const app = document.getElementById('app');
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const minTime = reduced ? 120 : 1100;
+    const start = Date.now();
+    let finished = false;
+
+    function finish(){
+      if (finished) return;
+      finished = true;
+      const wait = Math.max(0, minTime - (Date.now() - start));
+      setTimeout(() => {
+        preloader.classList.add('hide');
+        app.classList.add('show');
+        setTimeout(() => preloader.remove(), 650);
+      }, wait);
+    }
+
+    window.addEventListener('load', finish);
+    setTimeout(finish, 2600); // safety fallback
+  })();
+
+  /* ============ ENGINE LOKAL (tanpa API) ============ */
+  /*
+    Alur: berkas/URL → kenali format dari magic bytes → muat sebagai ImageData
+    (bawaan browser, atau dekoder HEIC/AVIF lokal bila formatnya HEIF) →
+    pindai QR di beberapa kandidat (resolusi/petak/ambang) → ubah payload EMV
+    (tag 01 → 12, tag 54 = nominal, CRC16 dihitung ulang) → gambar ulang QR
+    jadi PNG. Semuanya di browser: tidak ada gambar yang dikirim ke mana pun.
+  */
+
+  const CORE = window.QRISCORE;
+
+  const SCAN_HINTS = [
+    'Pastikan seluruh kode QRIS terlihat utuh (tidak terpotong).',
+    'Pakai tangkapan layar asli dari aplikasi bank/e-wallet Anda.',
+    'Hindari foto buram/terlalu miring, atau foto hasil kiriman ulang lewat chat.',
+    'Kalau QR-nya kecil di dalam foto besar, pangkas dulu supaya QR lebih dominan.'
+  ];
+  const HEIF_HINTS = [
+    'Buka gambarnya di iPhone/Mac (Safari) — browser itu bisa membaca HEIC.',
+    'Simpan/ekspor ulang dari aplikasi Foto sebagai JPG, lalu unggah ulang.',
+    'Atau tangkap layar (screenshot) gambarnya dan unggah hasil tangkapan layarnya.'
+  ];
+  const AVIF_HINTS = [
+    'Ubah gambarnya ke JPG atau PNG di aplikasi pengolah gambar, lalu unggah lagi.',
+    'Atau pakai browser versi baru (Chrome/Firefox/Safari terbaru) yang sudah bisa membuka AVIF.',
+    'Tangkapan layar (screenshot) juga langsung bisa: simpan sebagai PNG, lalu unggah.'
+  ];
+  const DECODE_HINTS = [
+    'Coba buka berkasnya di galeri/aplikasi Foto Anda; bila di sana juga gagal, berkasnya rusak.',
+    'Ambil tangkapan layar baru dari aplikasi bank/e-wallet, lalu unggah lagi.'
+  ];
+  /* gagal BACA berkas (izin/berkas berubah) — bukan soal format gambar */
+  const READ_HINTS = [
+    'Pilih ulang gambarnya lewat tombol Ganti — biasanya langsung berhasil.',
+    'Kalau memilih dari Google Photos/Drive/iCloud: simpan dulu ke HP, lalu unggah dari Galeri/Files.',
+    'Atau ambil tangkapan layar (screenshot) gambarnya, lalu unggah hasil tangkapan layarnya.'
+  ];
+  /* berkas format umum (PNG/JPG) tapi isinya tidak utuh, perbaikan pun gagal */
+  const BROKEN_HINTS = [
+    'Kirim/unduh ulang gambarnya — berkas yang ada sekarang tersalin belum selesai.',
+    'Kalau gambarnya dikirim lewat chat, minta dikirim ulang (jangan sebagai dokumen yang terputus).',
+    'Cara paling aman: buka gambarnya, ambil tangkapan layar (screenshot), lalu unggah hasilnya.'
+  ];
+
+  /* Muat <img>, <canvas>, atau ImageBitmap → ImageData (selalu di atas latar putih) */
+  const IMAGELOAD = {
+    MAX_SIDE: 2600,       /* batas sisi saat gambar dijadikan ImageData */
+    THUMB_SIDE: 220,      /* ukuran pratinjau di UI */
+    heifPromise: null,
+
+    loadScriptOnce(src){
+      return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.async = true;
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error('Berkas ' + src + ' tidak ditemukan'));
+        document.head.appendChild(s);
+      });
+    },
+
+    /* Dekoder HEIC/HEIF/AVIF lokal (vendor/libheif-bundle.js) — dimuat sekali, saat perlu */
+    ensureHeif(){
+      if (typeof window.libheif === 'function') return Promise.resolve(window.libheif);
+      if (!this.heifPromise){
+        this.heifPromise = this.loadScriptOnce('vendor/libheif-bundle.js')
+          .then(() => {
+            if (typeof window.libheif !== 'function') throw new Error('Dekoder HEIC tidak tersedia');
+            return window.libheif;
+          })
+          .catch(err => { this.heifPromise = null; throw err; });
+      }
+      return this.heifPromise;
+    },
+
+    thumbFromDrawable(source, width, height){
+      const k = Math.min(1, this.THUMB_SIDE / Math.max(width, height));
+      const w = Math.max(1, Math.round(width * k));
+      const h = Math.max(1, Math.round(height * k));
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(source, 0, 0, w, h);
+      return canvas.toDataURL('image/png');
+    },
+
+    thumbFromImageData(imageData){
+      const canvas = document.createElement('canvas');
+      canvas.width = imageData.width;
+      canvas.height = imageData.height;
+      const ctx = canvas.getContext('2d');
+      const buffer = ctx.createImageData(imageData.width, imageData.height);
+      buffer.data.set(imageData.data);
+      ctx.putImageData(buffer, 0, 0);
+      return this.thumbFromDrawable(canvas, imageData.width, imageData.height);
+    },
+
+    /* sumber gambar → ImageData (maks MAX_SIDE px, latar putih) */
+    toImageData(source, width, height){
+      const w0 = width || 1024, h0 = height || 1024;
+      const k = Math.min(1, this.MAX_SIDE / Math.max(w0, h0));
+      const w = Math.max(1, Math.round(w0 * k));
+      const h = Math.max(1, Math.round(h0 * k));
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.fillStyle = '#ffffff';    /* QRIS PNG sering berlatar transparan */
+      ctx.fillRect(0, 0, w, h);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(source, 0, 0, w, h);
+      return ctx.getImageData(0, 0, w, h);
+    },
+
+    /*
+      Jalur bawaan browser: createImageBitmap → <img> objectURL → <img> dataURL.
+      Diurutkan dari yang paling cepat & paling stabil di mobile ke yang paling
+      kompatibel. dataURL (FileReader.readAsDataURL) adalah fallback terakhir
+      karena paling lambat tapi paling tahan terhadap content URI yang
+      "menghilang" setelah Object URL dibuat.
+    */
+    async nativeSource(blob){
+      /* 1) createImageBitmap (paling cepat bila tersedia) */
+      if (typeof createImageBitmap === 'function'){
+        const variants = [{ imageOrientation: 'from-image' }, undefined];
+        for (const opts of variants){
+          try {
+            const bitmap = await (opts ? createImageBitmap(blob, opts) : createImageBitmap(blob));
+            if (bitmap && bitmap.width && bitmap.height){
+              return {
+                source: bitmap, width: bitmap.width, height: bitmap.height,
+                revoke(){ if (typeof bitmap.close === 'function') bitmap.close(); }
+              };
+            }
+          } catch (err){ /* coba variasi berikutnya */ }
+        }
+      }
+
+      /* 2) Object URL + Image (ringan, tapi kadang stale di content:// URI) */
+      let objectUrl = null;
+      try {
+        objectUrl = URL.createObjectURL(blob);
+        const img = await new Promise((resolve, reject) => {
+          const im = new Image();
+          let settled = false;
+          im.onload = () => { if (!settled){ settled = true; resolve(im); } };
+          im.onerror = () => { if (!settled){ settled = true; reject(new Error('gambar tidak bisa didekode')); } };
+          im.src = objectUrl;
+        });
+        const src = objectUrl;
+        return {
+          source: img, width: img.naturalWidth || img.width, height: img.naturalHeight || img.height,
+          revoke(){ URL.revokeObjectURL(src); }
+        };
+      } catch (err){
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+      }
+
+      /* 3) Data URL via FileReader (paling kompatibel di mobile; menyalin
+         byte ke memory sehingga tidak bergantung pada lifetime content URI) */
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error || new Error('berkas tidak bisa dibaca'));
+        reader.readAsDataURL(blob);
+      });
+      const img = await new Promise((resolve, reject) => {
+        const im = new Image();
+        im.onload = () => resolve(im);
+        im.onerror = () => reject(new Error('gambar tidak bisa didekode'));
+        im.src = dataUrl;
+      });
+      return {
+        source: img, width: img.naturalWidth || img.width, height: img.naturalHeight || img.height,
+        revoke(){}
+      };
+    },
+
+    /* Jalur HEIC/HEIF/AVIF: libheif (wasm) → ImageData */
+    async heifImageData(blob){
+      const factory = await this.ensureHeif();
+      const lib = await factory();
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      const images = new lib.HeifDecoder().decode(bytes);
+      if (!images || !images.length) throw new Error('Isi berkas tidak memuat gambar');
+      const image = images[0];
+      const width = image.get_width(), height = image.get_height();
+      const decoded = await new Promise((resolve, reject) => {
+        image.display({ data: new Uint8ClampedArray(width * height * 4), width, height }, data => {
+          if (!data) reject(new Error('Dekode HEIF gagal'));
+          else resolve(data);
+        });
+      });
+      let imageData = { data: decoded.data, width, height };
+      const k = Math.min(1, this.MAX_SIDE / Math.max(width, height));
+      if (k < 1) imageData = CORE.IMG.scale(imageData, width * k, height * k);
+      return imageData;
+    },
+
+    /*
+      Baca seluruh isi berkas; bedakan gagal BACA (izin) dari gagal DEKODE.
+      Di mobile (khususnya content URI dari Google Photos/Drive/iCloud),
+      FileReader LEBIH stabil daripada blob.arrayBuffer(), jadi dicoba duluan.
+      Juga ada retry sekali dengan jeda singkat, karena kadang file masih
+      dalam proses "diunduh" dari cloud provider saat first access.
+    */
+    async readAll(blob){
+      const tries = [
+        () => CORE.PROBE.readWithFileReader(blob),
+        () => (typeof blob.arrayBuffer === 'function')
+                ? blob.arrayBuffer().then(b => new Uint8Array(b))
+                : Promise.reject(new Error('arrayBuffer tidak tersedia')),
+      ];
+      let lastErr = null;
+      for (let attempt = 0; attempt < 2; attempt++){
+        for (const fn of tries){
+          try { return await fn(); }
+          catch (err){ lastErr = err; }
+        }
+        if (attempt === 0){
+          /* jeda singkat: beberapa cloud provider perlu waktu untuk menyiapkan file */
+          await new Promise(r => setTimeout(r, 350));
+        }
+      }
+      const fail = new Error(CORE.BYTES.readErrorMessage(lastErr));
+      fail.hints = READ_HINTS;
+      fail.isReadError = true;
+      throw fail;
+    },
+
+    /* Coba dekode satu kandidat byte hasil perbaikan → sumber gambar */
+    async rescueSource(bytes, mime){
+      const blob = new Blob([bytes], mime ? { type: mime } : undefined);
+      return await this.nativeSource(blob);
+    },
+
+    /*
+      Blob/File → { imageData, thumbUrl, info } siap dipindai & ditampilkan.
+      File dari Android/iOS kadang berupa content:// sementara (Google Photos,
+      Drive, iCloud, Recent Files). Kalau input dibersihkan/elemen berubah, akses
+      kedua ke File yang sama bisa melempar NotReadableError walau file valid.
+      Karena itu isi berkas disalin SEKALI ke memori, lalu semua decode berikutnya
+      memakai Blob baru dari byte tersebut (bukan referensi File asli lagi).
+    */
+    async load(blob, opts){
+      opts = opts || {};
+      const fromUrl = !!opts.fromUrl;
+      const fail = (message, hints) => {
+        const err = new Error(message);
+        err.hints = hints;
+        return err;
+      };
+
+      let raw = null;
+      try {
+        raw = await this.readAll(blob);
+      } catch (readErr){
+        throw readErr;
+      }
+      const head = raw.length > CORE.PROBE.HEAD_BYTES
+        ? raw.subarray(0, CORE.PROBE.HEAD_BYTES)
+        : raw;
+      const info = CORE.PROBE.sniff(head);
+      const blobType = info.mime || (blob && blob.type) || '';
+      const stableBlob = new Blob([raw], blobType ? { type: blobType } : undefined);
+
+      if (info.family === 'empty'){
+        throw fail(
+          fromUrl
+            ? 'Alamat gambar mengembalikan berkas kosong (0 byte).'
+            : CORE.PROBE.message(info),
+          ['Unduh gambarnya dulu, lalu unggah lewat tab Upload File.']
+        );
+      }
+      if (info.family === 'not-image'){
+        throw fail(
+          fromUrl
+            ? 'Alamat ini tidak mengembalikan gambar (terdeteksi ' + info.label + '). Pastikan URL menunjuk langsung ke berkas gambar.'
+            : CORE.PROBE.message(info),
+          ['Pakai tautan langsung ke berkas gambar (berakhiran .png/.jpg/.webp).',
+           'Atau unduh gambarnya, lalu unggah lewat tab Upload File.']
+        );
+      }
+
+      const finish = (src, repaired) => {
+        const thumbUrl = this.thumbFromDrawable(src.source, src.width, src.height);
+        const imageData = this.toImageData(src.source, src.width, src.height);
+        src.revoke();
+        return { imageData, thumbUrl, info, repaired: repaired || null };
+      };
+
+      /* 1) cara bawaan browser (tercepat, dan iOS memang bisa membaca HEIC).
+         Pakai stableBlob agar decode tidak bergantung lagi pada izin File asli. */
+      try {
+        return finish(await this.nativeSource(stableBlob));
+      } catch (nativeErr){
+        /* 2) HEIC/HEIF (dan format tak dikenal) → dekoder lokal libheif */
+        const pakaiHeif = (info.family === 'heif' && info.decoder === 'libheif') || info.family === 'unknown';
+        if (pakaiHeif){
+          try {
+            const imageData = await this.heifImageData(stableBlob);
+            return { imageData, thumbUrl: this.thumbFromImageData(imageData), info, repaired: null };
+          } catch (heifErr){
+            if (info.family === 'heif') throw fail(CORE.PROBE.message(info, 'decode'), HEIF_HINTS);
+            /* format tak dikenal: lanjut ke jalur perbaikan byte di bawah */
+          }
+        } else if (info.family === 'heif'){
+          /* AVIF: hanya bisa lewat dukungan bawaan browser (wasm tanpa dekoder AV1) */
+          throw fail(CORE.PROBE.message(info, 'decode'), AVIF_HINTS);
+        }
+
+        /*
+          3) Berkasnya "hampir benar": terpotong, ada sampah di depan/belakang,
+          atau isinya base64. Bersihkan/tambal byte-nya lalu coba dekode lagi —
+          selama kode QR-nya ada di dalam gambar, hasilnya tetap bisa dipakai.
+        */
+        const candidates = CORE.BYTES.rescueCandidates(raw);
+        for (const cand of candidates){
+          try {
+            const repairedInfo = CORE.PROBE.sniff(cand.bytes.subarray(0, CORE.PROBE.HEAD_BYTES));
+            const src = await this.rescueSource(cand.bytes, repairedInfo.mime || info.mime || blobType);
+            return finish(src, cand.actions);
+          } catch (e){ /* coba kandidat berikutnya */ }
+        }
+
+        throw fail(CORE.PROBE.message(info, 'decode'),
+          info.family === 'native' ? BROKEN_HINTS : DECODE_HINTS);
+      }
+    }
+  };
+
+  /* ============ STATE ============ */
+
+  const form          = document.getElementById('paymentForm');
+  const nominalInput  = document.getElementById('nominal');
+  const urlInput      = document.getElementById('urlInput');
+  const urlPreview     = document.getElementById('urlPreview');
+  const urlPreviewImg  = document.getElementById('urlPreviewImg');
+  const fileInput     = document.getElementById('fileInput');
+  const fileDropzone  = document.getElementById('fileDropzone');
+  const fileEmpty      = document.getElementById('fileEmpty');
+  const filePreview     = document.getElementById('filePreview');
+  const filePreviewImg  = document.getElementById('filePreviewImg');
+  const fileNameText    = document.getElementById('fileNameText');
+  const fileSizeText    = document.getElementById('fileSizeText');
+  const fileNote        = document.getElementById('fileNote');
+  const fileClear       = document.getElementById('fileClear');
+  const fileReplace     = document.getElementById('fileReplace');
+
+  const tabs    = document.querySelectorAll('.tab');
+  const panels  = document.querySelectorAll('.tab-panel');
+
+  const statusRow  = document.getElementById('statusRow');
+  const statusText = document.getElementById('statusText');
+
+  const submitBtn   = document.getElementById('submitBtn');
+  const processing  = document.getElementById('processing');
+  const processingText = document.getElementById('processingText');
+
+  const response        = document.getElementById('response');
+  const qrisFrame        = document.getElementById('qrisFrame');
+  const qrisPlaceholder  = document.getElementById('qrisPlaceholder');
+  const qrisImg          = document.getElementById('qrisImg');
+  const nominalDisplay   = document.getElementById('nominalDisplay');
+  const merchantName     = document.getElementById('merchantName');
+  const merchantCity     = document.getElementById('merchantCity');
+  const errorHints       = document.getElementById('errorHints');
+  const copyBtn          = document.getElementById('copyBtn');
+  const downloadBtn      = document.getElementById('downloadBtn');
+  const toggleRaw        = document.getElementById('toggleRaw');
+  const rawResponse      = document.getElementById('rawResponse');
+  const rawContent       = document.getElementById('rawContent');
+
+  const stepEls = document.querySelectorAll('.step');
+
+  const themeGrid       = document.getElementById('themeGrid');
+  const themeCustom     = document.getElementById('themeCustom');
+  const themeHint       = document.getElementById('themeHint');
+  const bgDropzone      = document.getElementById('bgDropzone');
+  const bgInput         = document.getElementById('bgInput');
+  const bgEmpty         = document.getElementById('bgEmpty');
+  const bgPreview       = document.getElementById('bgPreview');
+  const bgPreviewImg    = document.getElementById('bgPreviewImg');
+  const bgNameText      = document.getElementById('bgNameText');
+  const bgSizeText      = document.getElementById('bgSizeText');
+  const bgReplace       = document.getElementById('bgReplace');
+  const bgClear         = document.getElementById('bgClear');
+  const bgPosRow        = document.getElementById('bgPosRow');
+
+  let activeTab = 'upload';
+  let nominalRaw = '';
+  let currentQrisString = '';
+  let currentData = null;
+  let selectedFile = null;      /* File yang sedang dipilih di tab upload */
+  let selectedData = null;      /* hasil dekode File tersebut */
+  let runId = 0;                /* penanda agar proses lama tidak menimpa hasil baru */
+
+  /* ============ THEME STATE ============ */
+  /* Tema kartu = background gambar + QR dinamis + nominal yang ditempel.
+     Dua pilihan: kartu Rimuru dari assets/themes/, atau background unggahan sendiri. */
+  const THEME_BASE = 'assets/themes/';
+
+  /*
+    Cadangan kalau assets/themes/themes.json tidak bisa dimuat (offline / file://):
+    aplikasi tetap punya kartu Rimuru. Isinya HARUS sama dengan entri
+    "tiyanstore-rimuru" di themes.json — dijaga oleh test/page.test.js.
+  */
+  const FALLBACK_THEME = /* THEME_FALLBACK_START */ {
+    "id": "tiyanstore-rimuru",
+    "name": "Tiyanstore · Rimuru",
+    "description": "Background anime Rimuru Tempest — QR kiri; di bawah label NOMINAL ada nominal, nama toko, lalu kota",
+    "type": "image",
+    "image": "tiyanstore-rimuru.jpg",
+    "width": 1448,
+    "height": 1086,
+    "qr": {
+      "x": 150,
+      "y": 278,
+      "size": 450,
+      "padding": 14,
+      "radius": 4
+    },
+    "nominal": {
+      "x": 325,
+      "y": 980,
+      "align": "center",
+      "maxWidth": 360,
+      "fontSize": 52,
+      "color": "#FFFFFF",
+      "strokeColor": "#00B4FF",
+      "strokeWidth": 5,
+      "prefix": "Rp ",
+      "shadow": true
+    },
+    "merchant": {
+      "enabled": true,
+      "name": {
+        "x": 325,
+        "y": 1035,
+        "align": "center",
+        "maxWidth": 320,
+        "fontSize": 26,
+        "color": "#FFFFFF",
+        "strokeColor": "rgba(0,80,140,0.75)",
+        "strokeWidth": 3,
+        "shadow": true,
+        "fontWeight": "700",
+        "transform": "uppercase"
+      },
+      "city": {
+        "x": 325,
+        "y": 1066,
+        "align": "center",
+        "maxWidth": 300,
+        "fontSize": 20,
+        "color": "rgba(180,230,255,0.92)",
+        "strokeColor": "rgba(0,40,80,0.7)",
+        "strokeWidth": 2,
+        "shadow": true,
+        "fontWeight": "500"
+      }
+    },
+    "thumb": "tiyanstore-rimuru.thumb.jpg"
+  } /* THEME_FALLBACK_END */;
+
+  let themeCatalog = [FALLBACK_THEME];
+  let selectedThemeId = FALLBACK_THEME.id;
+  let customBgFile = null;
+  let customBgUrl = null;       /* object URL untuk <img> background kustom */
+  let customBgImage = null;     /* HTMLImageElement yang sudah loaded */
+  let customQrPos = 'center';
+  const themeImageCache = new Map();  /* id → HTMLImageElement */
+
+  function loadImage(url){
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Gagal memuat gambar tema'));
+      img.src = url;
+    });
+  }
+
+  function getSelectedTheme(){
+    if (selectedThemeId === 'custom') {
+      return {
+        id: 'custom',
+        type: 'custom',
+        name: 'Background sendiri',
+        position: customQrPos,
+      };
+    }
+    return themeCatalog.find(t => t.id === selectedThemeId) || themeCatalog[0];
+  }
+
+  function renderThemeGrid(){
+    if (!themeGrid) return;
+    const items = themeCatalog.slice();
+    /* kartu "custom" selalu di akhir */
+    items.push({
+      id: 'custom',
+      name: 'Upload sendiri',
+      type: 'custom',
+      description: 'Pakai gambar background kamu',
+    });
+
+    themeGrid.innerHTML = items.map(t => {
+      const active = t.id === selectedThemeId ? ' active' : '';
+      let thumb;
+      if (t.type === 'custom') {
+        thumb = '<div class="theme-thumb emoji" aria-hidden="true">🎨</div>';
+      } else if (t.thumb) {
+        thumb = '<img class="theme-thumb" src="' + THEME_BASE + t.thumb + '" alt="' + escapeHtml(t.name) + '" loading="lazy">';
+      } else if (t.image) {
+        thumb = '<img class="theme-thumb" src="' + THEME_BASE + t.image + '" alt="' + escapeHtml(t.name) + '" loading="lazy">';
+      } else {
+        thumb = '<div class="theme-thumb emoji" aria-hidden="true">✨</div>';
+      }
+      return (
+        '<button type="button" class="theme-card' + active + '" data-theme="' + escapeHtml(t.id) + '" role="option" aria-selected="' + (t.id === selectedThemeId) + '" title="' + escapeHtml(t.description || t.name) + '">' +
+          '<span class="theme-check">✓</span>' +
+          thumb +
+          '<span class="theme-name">' + escapeHtml(t.name) + '</span>' +
+        '</button>'
+      );
+    }).join('');
+  }
+
+  function setTheme(id){
+    /* "custom" selalu boleh; selain itu id harus ada di katalog tema */
+    const ids = themeCatalog.map(t => t.id);
+    selectedThemeId = (id === 'custom' || ids.indexOf(id) >= 0) ? id : (ids[0] || 'custom');
+    renderThemeGrid();
+    if (themeCustom) themeCustom.hidden = selectedThemeId !== 'custom';
+    const t = getSelectedTheme();
+    if (themeHint && t) {
+      if (t.type === 'custom') {
+        themeHint.textContent = 'Unggah background anime/desain kamu. QR dinamis + nominal, toko, dan kota ditempel otomatis.';
+      } else {
+        themeHint.textContent = (t.description || t.name) + ' — QR + nominal, toko, kota ditempel sesuai layout kartu.';
+      }
+    }
+  }
+
+  async function ensureThemeBackground(theme){
+    if (!theme || !theme.type) throw new Error('Tema kartu tidak dikenali — muat ulang halaman lalu pilih tema lagi.');
+    if (theme.type === 'custom') {
+      if (!customBgImage) throw new Error('Unggah gambar background dulu sebelum membuat QRIS bertema.');
+      return customBgImage;
+    }
+    if (themeImageCache.has(theme.id)) return themeImageCache.get(theme.id);
+    if (!theme.image) throw new Error('Tema tidak punya berkas gambar');
+    const img = await loadImage(THEME_BASE + theme.image);
+    themeImageCache.set(theme.id, img);
+    return img;
+  }
+
+  async function initThemes(){
+    try {
+      const res = await fetch(THEME_BASE + 'themes.json', { cache: 'no-cache' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.themes) && data.themes.length) {
+          /* entri lama bertipe "plain" diabaikan: kartu QRIS selalu bergambar */
+          const bergambar = data.themes.filter(t => t && t.id && t.type && t.type !== 'plain');
+          if (bergambar.length) themeCatalog = bergambar;
+        }
+      }
+    } catch (err) {
+      /* offline / file:// — pakai kartu Rimuru bawaan (FALLBACK_THEME) */
+    }
+    /* kalau tema terpilih tidak ada lagi di katalog, pakai tema pertama */
+    const ids = themeCatalog.map(t => t.id);
+    setTheme(ids.indexOf(selectedThemeId) >= 0 ? selectedThemeId : ids[0]);
+  }
+
+  if (themeGrid) {
+    themeGrid.addEventListener('click', e => {
+      const card = e.target.closest('[data-theme]');
+      if (!card) return;
+      setTheme(card.getAttribute('data-theme'));
+    });
+  }
+
+  /* Background kustom */
+  function resetBgState(options){
+    options = options || {};
+    customBgFile = null;
+    customBgImage = null;
+    if (customBgUrl) { URL.revokeObjectURL(customBgUrl); customBgUrl = null; }
+    if (options.clearInput !== false && bgInput) bgInput.value = '';
+    if (bgEmpty) bgEmpty.style.display = 'block';
+    if (bgPreview) bgPreview.style.display = 'none';
+    if (bgDropzone) bgDropzone.classList.remove('has-file');
+    if (bgPreviewImg) bgPreviewImg.removeAttribute('src');
+  }
+
+  async function selectBgFile(file){
+    if (!file) { resetBgState(); return; }
+    resetBgState({ clearInput: false });
+    customBgFile = file;
+    if (bgNameText) bgNameText.textContent = file.name || 'background';
+    if (bgSizeText) bgSizeText.textContent = formatSize(file.size || 0);
+    if (bgEmpty) bgEmpty.style.display = 'none';
+    if (bgPreview) bgPreview.style.display = 'flex';
+    if (bgDropzone) bgDropzone.classList.add('has-file');
+    try {
+      customBgUrl = URL.createObjectURL(file);
+      const img = await loadImage(customBgUrl);
+      if (file !== customBgFile) return;
+      customBgImage = img;
+      if (bgPreviewImg) bgPreviewImg.src = customBgUrl;
+    } catch (err) {
+      if (file !== customBgFile) return;
+      customBgImage = null;
+      if (bgPreviewImg) bgPreviewImg.removeAttribute('src');
+    }
+  }
+
+  if (bgInput) {
+    bgInput.addEventListener('change', () => {
+      const file = bgInput.files && bgInput.files[0];
+      if (file) selectBgFile(file);
+    });
+  }
+  if (bgClear) bgClear.addEventListener('click', e => {
+    e.preventDefault(); e.stopPropagation();
+    resetBgState();
+  });
+  if (bgReplace) bgReplace.addEventListener('click', e => {
+    e.preventDefault(); e.stopPropagation();
+    resetBgState();
+    requestAnimationFrame(() => { try { bgInput.click(); } catch (err) {} });
+  });
+  if (bgDropzone) {
+    bgDropzone.addEventListener('dragover', e => { e.preventDefault(); bgDropzone.classList.add('drag'); });
+    bgDropzone.addEventListener('dragleave', e => { e.preventDefault(); bgDropzone.classList.remove('drag'); });
+    bgDropzone.addEventListener('drop', e => {
+      e.preventDefault();
+      bgDropzone.classList.remove('drag');
+      const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (!file) return;
+      try { bgInput.files = e.dataTransfer.files; } catch (err) {}
+      selectBgFile(file);
+    });
+  }
+  if (bgPosRow) {
+    bgPosRow.addEventListener('click', e => {
+      const chip = e.target.closest('[data-pos]');
+      if (!chip) return;
+      customQrPos = chip.getAttribute('data-pos') || 'center';
+      bgPosRow.querySelectorAll('.pos-chip').forEach(c => {
+        c.classList.toggle('active', c === chip);
+      });
+    });
+  }
+
+  initThemes();
+
+  /* ============ UTIL ============ */
+  const raf = () => new Promise(resolve => {
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => resolve());
+    else setTimeout(resolve, 0);
+  });
+
+  function escapeHtml(text){
+    return String(text == null ? '' : text)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function formatSize(bytes){
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+  }
+
+  /* ============ STEPPER ============ */
+  function updateStepper(){
+    const step1Done = nominalRaw && parseInt(nominalRaw, 10) > 0;
+    const step2Done = activeTab === 'upload' ? !!selectedFile : !!urlInput.value.trim();
+    const resultShown = response.classList.contains('show');
+
+    setStep(1, step1Done, !step1Done);
+    setStep(2, step2Done, step1Done && !step2Done);
+    setStep(3, resultShown, step1Done && step2Done && !resultShown);
+  }
+  function setStep(n, done, active){
+    const el = document.querySelector(`.step[data-step="${n}"]`);
+    el.classList.toggle('done', !!done);
+    el.classList.toggle('active', !!active);
+  }
+
+  /* ============ NOMINAL FORMATTING ============ */
+  nominalInput.addEventListener('input', () => {
+    const raw = nominalInput.value.replace(/[^0-9]/g, '');
+    nominalRaw = raw;
+    nominalInput.value = raw ? new Intl.NumberFormat('id-ID').format(raw) : '';
+    updateStepper();
+  });
+
+  /* ============ TABS ============ */
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      activeTab = tab.dataset.tab;
+      tabs.forEach(t => {
+        t.classList.toggle('active', t === tab);
+        t.setAttribute('aria-selected', t === tab ? 'true' : 'false');
+      });
+      panels.forEach(p => { p.hidden = p.dataset.panel !== activeTab; });
+      updateStepper();
+    });
+  });
+
+  /* ============ URL PREVIEW (pratinjau ringan, tidak memblokir proses) ============ */
+  let urlPreviewTimer = null;
+  urlInput.addEventListener('input', () => {
+    const val = urlInput.value.trim();
+    clearTimeout(urlPreviewTimer);
+    if (!val){
+      urlPreview.style.display = 'none';
+      updateStepper();
+      return;
+    }
+    updateStepper();
+    urlPreviewTimer = setTimeout(() => {
+      urlPreviewImg.onerror = () => { urlPreview.style.display = 'none'; };
+      urlPreviewImg.onload  = () => { urlPreview.style.display = 'block'; };
+      urlPreviewImg.src = val;
+    }, 600);
+  });
+
+  /* ============ PILIH BERKAS ============ */
+  function setFileNote(text, kind){
+    fileNote.hidden = !text;
+    fileNote.textContent = text || '';
+    fileNote.className = 'file-note' + (kind ? ' ' + kind : '');
+  }
+
+  function resetFileState(options){
+    options = options || {};
+    const clearInput = options.clearInput !== false;
+    selectedFile = null;
+    selectedData = null;
+    if (clearInput) fileInput.value = '';
+    fileEmpty.style.display = 'block';
+    filePreview.style.display = 'none';
+    fileDropzone.classList.remove('has-file');
+    filePreviewImg.removeAttribute('src');
+    setFileNote('');
+    updateStepper();
+  }
+
+  async function selectFile(file){
+    if (!file){ resetFileState(); return; }
+
+    /* Jangan kosongkan fileInput.value setelah event change.
+       Di beberapa Android/iOS, File dari Photos/Drive/iCloud kehilangan izin
+       baca begitu input dibersihkan, sehingga JPEG/PNG valid kadang dianggap
+       "tidak bisa dibaca". Input hanya dikosongkan saat Hapus/Ganti. */
+    resetFileState({ clearInput: false });
+    selectedFile = file;
+    selectedData = null;
+    fileNameText.textContent = file.name || 'gambar';
+    fileSizeText.textContent = formatSize(file.size || 0);
+    fileEmpty.style.display = 'none';
+    filePreview.style.display = 'flex';
+    fileDropzone.classList.add('has-file');
+    setFileNote('Membaca gambar…', 'loading');
+    updateStepper();
+
+    try {
+      const data = await IMAGELOAD.load(file);
+      if (file !== selectedFile) return;   /* sudah diganti berkas lain */
+      selectedData = data;
+      filePreviewImg.src = data.thumbUrl;
+      const dasar = data.info.label + ' terbaca · ' + data.imageData.width + '×' + data.imageData.height + ' px';
+      setFileNote(
+        data.repaired && data.repaired.length
+          ? dasar + ' · berkas diperbaiki otomatis (' + data.repaired.join('; ') + ')'
+          : dasar,
+        'ok'
+      );
+    } catch (err){
+      if (file !== selectedFile) return;
+      selectedData = null;
+      filePreviewImg.removeAttribute('src');
+      setFileNote(err.message, 'error');
+    }
+    updateStepper();
+  }
+
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files && fileInput.files[0];
+    if (file) selectFile(file);
+  });
+
+  if (fileClear) fileClear.addEventListener('click', e => {
+    e.stopPropagation();
+    e.preventDefault();
+    resetFileState();
+  });
+  if (fileReplace) fileReplace.addEventListener('click', e => {
+    e.stopPropagation();
+    e.preventDefault();
+    /* Bersihkan state dan input SEBELUM membuka pemilih berkas, supaya:
+       - Tidak ada referensi File lama yang "nyangkut"
+       - Peristiwa 'change' akan terpicu meskipun pengguna memilih
+         berkas yang SAMA (karena value sudah dikosongkan).
+       - Kalau pengguna membatalkan dialog pilih berkas, UI sudah
+         kembali ke keadaan kosong (siap dipilih lagi). */
+    resetFileState();
+    /* Gunakan timeout microtask agar browser benar-benar sudah
+       mengosongkan input sebelum kita memicu klik pada beberapa
+       browser mobile yang sensitif terhadap urutan ini. */
+    requestAnimationFrame(() => {
+      try { fileInput.click(); } catch (err){ /* aman */ }
+    });
+  });
+
+  fileDropzone.addEventListener('dragover', e => { e.preventDefault(); fileDropzone.classList.add('drag'); });
+  fileDropzone.addEventListener('dragleave', e => { e.preventDefault(); fileDropzone.classList.remove('drag'); });
+  fileDropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    fileDropzone.classList.remove('drag');
+    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!file) return;
+    try { fileInput.files = e.dataTransfer.files; } catch (err){ /* sebagian browser menolak */ }
+    selectFile(file);
+  });
+
+  /* ============ STATUS & PROSES ============ */
+  function setStatus(type, text){
+    statusRow.className = `status-row ${type}`;
+    statusText.textContent = text;
+  }
+
+  function setStage(text){
+    processingText.textContent = text;
+  }
+
+  function setLoading(state){
+    if (state) {
+      submitBtn.style.display = 'none';
+      processing.classList.add('show');
+      setStage('Menyiapkan berkas…');
+      setStatus('loading', 'Memproses permintaan');
+    } else {
+      submitBtn.style.display = 'flex';
+      processing.classList.remove('show');
+    }
+    submitBtn.disabled = state;
+  }
+
+  /* ============ HASIL ============ */
+  function renderHints(hints){
+    const list = (hints || []).filter(Boolean);
+    if (!list.length){
+      errorHints.style.display = 'none';
+      errorHints.innerHTML = '';
+      return;
+    }
+    errorHints.innerHTML =
+      '<div class="error-hints-title">Coba cara ini:</div><ul>' +
+      list.map(item => '<li>' + escapeHtml(item) + '</li>').join('') +
+      '</ul>';
+    errorHints.style.display = 'block';
+  }
+
+  function showQris(data){
+    const result = data.result;
+    /*
+      Info (nominal + toko + kota) selalu DIBake ke dalam gambar kartu
+      (Rimuru / background unggahan sendiri). Jadi teks di luar frame
+      disembunyikan dengan class .info-baked, kecuali kalau gambarnya gagal.
+    */
+    const infoBaked = !!(result.qris_url);
+
+    if (result.qris_url) {
+      qrisImg.src = result.qris_url;
+      qrisFrame.style.display = 'flex';
+      qrisFrame.classList.add('themed');
+      qrisPlaceholder.style.display = 'none';
+    } else {
+      qrisFrame.style.display = 'none';
+      qrisFrame.classList.remove('themed');
+      qrisPlaceholder.style.display = 'flex';
+      qrisPlaceholder.innerHTML = '<span>Gambar QRIS tidak tersedia</span>';
+    }
+
+    /* Teks luar tetap diisi (untuk disalin/JSON & fallback), tapi disembunyikan */
+    nominalDisplay.textContent = `Rp ${parseInt(result.nominal, 10).toLocaleString('id-ID')}`;
+    merchantName.textContent = result.merchant_name || '-';
+    merchantCity.textContent = result.merchant_city || '-';
+    document.getElementById('qrisDisplay').classList.toggle('info-baked', infoBaked);
+    renderHints(null);
+
+    currentQrisString = result.qris_string || '';
+    currentData = data;
+    downloadBtn.style.display = result.qris_url ? 'block' : 'none';
+
+    response.classList.add('show');
+    rawContent.textContent = JSON.stringify(data, null, 2);
+    rawResponse.style.display = 'none';
+    rawResponse.classList.remove('error');
+    toggleRaw.textContent = 'Lihat respons JSON';
+
+    setStatus('success', infoBaked ? 'Kartu QRIS siap diunduh' : 'Kode QRIS berhasil dibuat');
+    updateStepper();
+  }
+
+  function showError(message, hints){
+    const text = message || 'Terjadi kesalahan saat memproses gambar';
+    response.classList.add('show');
+    qrisFrame.style.display = 'none';
+    qrisFrame.classList.remove('themed');
+    document.getElementById('qrisDisplay').classList.remove('info-baked');
+    qrisPlaceholder.style.display = 'flex';
+    qrisPlaceholder.innerHTML = `<span style="color:var(--error);">⚠ ${escapeHtml(text)}</span>`;
+    nominalDisplay.textContent = 'Rp 0';
+    merchantName.textContent = '-';
+    merchantCity.textContent = '-';
+    downloadBtn.style.display = 'none';
+    renderHints(hints);
+
+    rawContent.textContent = JSON.stringify(
+      (hints && hints.length) ? { error: text, saran: hints } : { error: text }, null, 2
+    );
+    rawResponse.style.display = 'none';
+    rawResponse.classList.add('error');
+    toggleRaw.textContent = 'Lihat respons JSON';
+
+    setStatus('error', 'Gagal membuat kode QRIS');
+    updateStepper();
+  }
+
+  /* ============ COPY / DOWNLOAD / TOGGLE ============ */
+  copyBtn.addEventListener('click', async () => {
+    if (!currentQrisString) return;
+    try {
+      await navigator.clipboard.writeText(currentQrisString);
+    } catch (err) {
+      const ta = document.createElement('textarea');
+      ta.value = currentQrisString;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+    copyBtn.textContent = '✅ Tersalin';
+    copyBtn.classList.add('copied');
+    setTimeout(() => {
+      copyBtn.textContent = '📋 Salin String QRIS';
+      copyBtn.classList.remove('copied');
+    }, 2000);
+  });
+
+  downloadBtn.addEventListener('click', async () => {
+    if (!currentData || !currentData.result.qris_url) return;
+    const url = currentData.result.qris_url;
+    const themeTag = currentData.result.theme
+      ? '-' + String(currentData.result.theme).replace(/[^a-z0-9_-]+/gi, '')
+      : '';
+    const fileName = `qris${themeTag}-${currentData.result.nominal || Date.now()}.png`;
+
+    // Hasil generate lokal berupa data URL — bisa diunduh langsung
+    if (url.startsWith('data:')) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      return;
+    }
+
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      window.open(url, '_blank');
+    }
+  });
+
+  toggleRaw.addEventListener('click', () => {
+    const isHidden = rawResponse.style.display === 'none';
+    rawResponse.style.display = isHidden ? 'block' : 'none';
+    toggleRaw.textContent = isHidden ? 'Sembunyikan respons JSON' : 'Lihat respons JSON';
+  });
+
+  /* ============ FORM SUBMIT ============ */
+  async function fetchImageBlob(url){
+    let res;
+    try {
+      res = await fetch(url, { mode: 'cors' });
+    } catch (err){
+      const e = new Error('Gambar dari URL ini tidak bisa diakses langsung (diblokir CORS server sumber).');
+      e.hints = ['Unduh gambarnya dulu, lalu unggah lewat tab Upload File.'];
+      throw e;
+    }
+    if (!res.ok){
+      throw new Error('Gagal mengunduh gambar dari URL (HTTP ' + res.status + ').');
+    }
+    const blob = await res.blob();
+    if (!blob.size) throw new Error('URL tidak mengembalikan data gambar.');
+    return blob;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const myRun = ++runId;
+
+    const urlValue = urlInput.value.trim();
+
+    // Nominal kanonik: buang nol di depan, wajib 1..9.999.999.999.999
+    const amount = String(parseInt(nominalRaw, 10) || 0);
+    if (amount === '0' || amount === 'NaN') {
+      showError('Masukkan nominal yang valid.');
+      return;
+    }
+    if (amount.length > 13) {
+      showError('Nominal terlalu besar.');
+      return;
+    }
+    if (activeTab === 'upload' && !selectedFile) {
+      showError('Pilih file gambar QRIS terlebih dahulu.', ['Klik area unggah, pilih gambar QRIS, lalu tekan tombol Buat Kode QRIS.']);
+      return;
+    }
+    if (activeTab === 'url' && !urlValue) {
+      showError('Masukkan URL gambar QRIS terlebih dahulu.');
+      return;
+    }
+
+    response.classList.remove('show');
+    setLoading(true);
+
+    try {
+      /* 1) Ambil gambar & jadikan ImageData */
+      let source = null;
+      if (activeTab === 'upload'){
+        if (selectedData){
+          source = selectedData;
+        } else {
+          setStage('Membaca & menyiapkan gambar…');
+          source = await IMAGELOAD.load(selectedFile);
+        }
+      } else {
+        setStage('Mengunduh gambar dari URL…');
+        const blob = await fetchImageBlob(urlValue);
+        source = await IMAGELOAD.load(blob, { fromUrl: true });
+      }
+      if (myRun !== runId) return;
+
+      if (!source.imageData || !source.imageData.width){
+        showError('Dimensi gambar tidak terbaca.');
+        return;
+      }
+
+      /* 2) Pindai QR di dalam gambar (multi resolusi/petak/ambang) */
+      setStage('Memindai kode QR…');
+      const hit = await CORE.SCAN.scan(source.imageData, {
+        onAttempt: (n, total, label) => {
+          if (myRun === runId) setStage(`Memindai kode QR… ${n}/${total} · ${label}`);
+        },
+        pause: raf,
+        cancelled: () => myRun !== runId
+      });
+      if (myRun !== runId) return;
+
+      if (!hit.data){
+        showError(
+          'Kode QR tidak ditemukan pada gambar (sudah dicoba ' + hit.attempts + ' cara pemindaian).',
+          SCAN_HINTS
+        );
+        return;
+      }
+
+      /* 3) Ubah QRIS statis → dinamis bernominal */
+      setStage('Menyisipkan nominal & menghitung CRC…');
+      let built;
+      try {
+        built = CORE.EMV.makeDynamic(hit.data, amount);
+      } catch (err) {
+        showError(err.message, [
+          'Pastikan gambar berisi QRIS statis milik merchant (bukan QR biasa/QRIS dinamis).'
+        ]);
+        return;
+      }
+
+      /* 4) Tempel QR dinamis + nominal ke kartu bergambar (Rimuru / unggahan) */
+      const theme = getSelectedTheme();
+      setStage('Menyusun kartu bertema…');
+      let background;
+      try {
+        background = await ensureThemeBackground(theme);
+      } catch (bgErr) {
+        showError(bgErr.message, theme && theme.type === 'custom'
+          ? ['Klik “Upload sendiri”, pilih gambar background anime/desain kamu, lalu coba lagi.']
+          : ['Muat ulang halaman lalu pilih kartu Rimuru lagi.']);
+        return;
+      }
+      if (myRun !== runId) return;
+      const dataUrl = CORE.THEME.compose({
+        text: built.qrisString,
+        theme: theme,
+        background: background,
+        amount: amount,
+        merchantName: built.merchantName,
+        merchantCity: built.merchantCity,
+      });
+
+      showQris({
+        status: true,
+        engine: 'local-browser (tanpa API)',
+        source: {
+          jenis: activeTab === 'upload' ? 'berkas' : 'url',
+          format: (source.info && source.info.label) || 'tidak diketahui',
+          ukuran: source.imageData.width + 'x' + source.imageData.height,
+          pemindaian: hit.label,
+          percobaan: hit.attempts,
+          perbaikan: (source.repaired && source.repaired.length) ? source.repaired : undefined
+        },
+        result: {
+          qris_string: built.qrisString,
+          qris_url: dataUrl,
+          nominal: amount,
+          merchant_name: built.merchantName,
+          merchant_city: built.merchantCity,
+          theme: theme && theme.id ? theme.id : 'kartu',
+          theme_name: theme && theme.name ? theme.name : 'Kartu QRIS'
+        }
+      });
+    } catch (error){
+      if (myRun !== runId) return;
+      showError((error && error.message) || 'Terjadi kesalahan saat memproses gambar', error && error.hints);
+    } finally {
+      if (myRun === runId) setLoading(false);
+    }
+  });
+
+  updateStepper();
+</script>
+</body>
+</html>
