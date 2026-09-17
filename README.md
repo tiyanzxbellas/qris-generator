@@ -62,10 +62,17 @@ penyimpanan HP lalu unggah dari Galeri/Files.
    - tag `63` (CRC16/CCITT, poly `0x1021`, init `0xFFFF`) dihitung ulang atas
      **byte UTF-8** payload — nama merchant non-ASCII tetap valid.
 5. QR baru digambar ulang dengan [qrcode-generator](vendor/qrcode.min.js)
-   (+ dukungan UTF-8), lalu **ditempel ke kartu bergambar** — tema Rimuru
-   bawaan atau background yang kamu unggah. Di bawah QR ditulis berurutan:
+   (+ dukungan UTF-8, koreksi kesalahan `H` bila tema punya logo tengah), lalu
+   **ditempel ke kartu bergambar** — tema Rimuru bawaan atau background yang
+   kamu unggah — dengan **logo di tengah QR**. Di bawah QR ditulis berurutan:
    nominal, nama toko, lalu kota/kabupaten (tag `59`/`60`).
    String QRIS-nya juga disediakan untuk disalin.
+
+   Presisi tempel: modul QR digambar dengan batas piksel bulat (tanpa celah/
+   overlap/anti-alias abu-abu), dan tema bisa mendeklarasikan `qr.cover` — persegi yang
+   ditutup putih penuh mengikuti tepi kotak putih artwork persis, sehingga
+   contoh QR cetakan pada background tertutup rata tanpa sisa (gompel/bolong)
+   dan frame artwork di luarnya tidak ikut tertimpa.
 
 ## Menjalankan
 
@@ -96,7 +103,7 @@ berurutan **nominal → nama toko → kota/kabupaten**:
 
 | Tema | Keterangan |
 |---|---|
-| Tiyanstore · Rimuru (bawaan) | Background anime Rimuru — QR di kiri; di bawah label NOMINAL berurutan: nominal, nama toko, lalu kota/kabupaten |
+| Tiyanstore · Rimuru (bawaan) | Background anime Rimuru — QR di kiri **dengan logo Rimuru di tengahnya** (koreksi kesalahan `H`); di bawah label NOMINAL berurutan: nominal, nama toko, lalu kota/kabupaten |
 | Upload sendiri | Pakai background kamu (anime/foto/desain), posisi QR: tengah/kiri/kanan — teks dirapikan di bawah QR |
 
 Semua digambar **di browser** (`THEME.compose` di `src/qris-core.js`): background + QR dinamis + teks nominal, nama toko (tag `59`), dan kota/kabupaten (tag `60`). Tidak ada unggahan ke server.
