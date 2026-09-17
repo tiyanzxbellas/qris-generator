@@ -1207,7 +1207,7 @@
 
       if (!theme || !theme.type || theme.type === 'plain') {
         /* Tema polos sudah dihapus: kartu QRIS wajib punya background gambar. */
-        throw new Error('Tema kartu wajib bergambar — pilih kartu Rimuru atau unggah background sendiri.');
+        throw new Error('Tema kartu wajib bergambar.');
       } else if (theme.type === 'custom') {
         bg = opts.background;
         if (!bg) throw new Error('Background kustom belum dimuat');
