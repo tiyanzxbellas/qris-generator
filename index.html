@@ -345,98 +345,6 @@
   .file-note.ok{ border-left-color: var(--green-dim); color: rgba(0,255,163,.75); }
   .file-note.error{ border-left-color: var(--error); color: var(--error); background: rgba(255,107,120,.06); }
 
-  /* ============ THEME PICKER ============ */
-  .theme-grid{
-    display:grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-  .theme-card{
-    position: relative;
-    border: 1.5px solid var(--line);
-    border-radius: 12px;
-    background: rgba(255,255,255,.03);
-    padding: 6px;
-    cursor: pointer;
-    text-align: center;
-    transition: all .25s var(--ease);
-    color: var(--text-muted);
-    font-family: var(--font-display);
-  }
-  .theme-card:hover{
-    border-color: var(--blue-dim);
-    background: rgba(45,212,255,.06);
-  }
-  .theme-card.active{
-    border-color: var(--green);
-    background: rgba(0,255,163,.08);
-    box-shadow: 0 0 0 1px rgba(0,255,163,.25) inset, 0 0 18px rgba(0,255,163,.12);
-    color: var(--text);
-  }
-  .theme-card .theme-thumb{
-    width: 100%;
-    aspect-ratio: 1;
-    border-radius: 8px;
-    object-fit: cover;
-    background:
-      linear-gradient(135deg, rgba(0,255,163,.12), rgba(45,212,255,.12)),
-      #0a1210;
-    display:block;
-  }
-  .theme-card .theme-thumb.emoji{
-    display:flex; align-items:center; justify-content:center;
-    font-size: 28px;
-  }
-  .theme-card .theme-name{
-    display:block;
-    margin-top: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    line-height: 1.25;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .theme-card .theme-check{
-    position:absolute; top: 8px; right: 8px;
-    width: 16px; height: 16px; border-radius: 50%;
-    background: var(--green); color: #04130d;
-    font-size: 10px; font-weight: 700;
-    display:none; align-items:center; justify-content:center;
-    box-shadow: 0 0 8px var(--green-glow);
-  }
-  .theme-card.active .theme-check{ display:flex; }
-
-  .theme-custom{
-    margin-top: 10px;
-    padding: 12px;
-    border-radius: 12px;
-    border: 1px dashed var(--line);
-    background: rgba(255,255,255,.025);
-  }
-  .theme-custom[hidden]{ display:none; }
-  .theme-custom .pos-row{
-    display:flex; gap: 6px; margin-top: 10px;
-  }
-  .pos-chip{
-    flex:1; padding: 8px 6px; border-radius: 9px;
-    border: 1px solid var(--line);
-    background: rgba(255,255,255,.04);
-    color: var(--text-faint);
-    font-family: var(--font-mono); font-size: 11px;
-    cursor: pointer; transition: all .2s var(--ease);
-  }
-  .pos-chip.active{
-    color: var(--text);
-    border-color: rgba(45,212,255,.4);
-    background: rgba(45,212,255,.1);
-  }
-  .theme-hint{
-    margin-top: 8px;
-    font-size: 11.5px; color: var(--text-faint);
-    line-height: 1.45;
-  }
-
   .qris-frame.themed{
     width: 100%;
     max-width: 360px;
@@ -643,7 +551,6 @@
     .qris-placeholder{ width: 100%; max-width: 260px; min-height: 180px; }
     .file-preview{ flex-wrap: wrap; }
     .file-preview .file-actions{ width: 100%; }
-    .theme-grid{ grid-template-columns: repeat(2, 1fr); }
   }
 
   @media (prefers-reduced-motion: reduce){
@@ -675,7 +582,7 @@
           <span></span><span></span><span></span>
         </div>
         <h1>QRIS Generator</h1>
-        <p>QRIS dinamis + kartu Tiyanstore · Rimuru / upload sendiri</p>
+        <p>QRIS dinamis dari gambar QRIS statis</p>
       </div>
 
       <div class="stepper" id="stepper">
@@ -734,41 +641,6 @@
                 <img id="urlPreviewImg" alt="Pratinjau QRIS">
               </div>
             </div>
-          </div>
-
-          <!-- Theme picker -->
-          <div class="form-group">
-            <label>Tema Kartu QRIS <span class="hint">— Rimuru / upload sendiri</span></label>
-            <div class="theme-grid" id="themeGrid" role="listbox" aria-label="Pilih tema kartu">
-              <!-- diisi JS dari assets/themes/themes.json -->
-            </div>
-            <div class="theme-custom" id="themeCustom" hidden>
-              <div class="file-upload" id="bgDropzone">
-                <input type="file" id="bgInput" accept="image/*,.png,.jpg,.jpeg,.webp">
-                <div id="bgEmpty">
-                  <div class="file-icon">🎨</div>
-                  <div class="file-text">Unggah background sendiri<small>Anime, foto, atau desain kartu — QR ditempel, nominal + toko + kota dirapikan di bawahnya</small></div>
-                </div>
-                <div class="file-preview" id="bgPreview">
-                  <img id="bgPreviewImg" alt="Pratinjau background">
-                  <div class="meta">
-                    <div class="name" id="bgNameText">-</div>
-                    <div class="size" id="bgSizeText">-</div>
-                  </div>
-                  <div class="file-actions">
-                    <button type="button" class="file-btn" id="bgReplace">Ganti</button>
-                    <button type="button" class="file-btn danger" id="bgClear">Hapus</button>
-                  </div>
-                </div>
-              </div>
-              <div class="pos-row" id="bgPosRow" role="group" aria-label="Posisi QR">
-                <button type="button" class="pos-chip active" data-pos="center">Tengah</button>
-                <button type="button" class="pos-chip" data-pos="left">Kiri</button>
-                <button type="button" class="pos-chip" data-pos="right">Kanan</button>
-              </div>
-              <p class="theme-hint">Background kamu dipakai utuh. QR ditempel di posisi yang dipilih; di bawahnya berurutan nominal, nama toko, lalu kota/kabupaten.</p>
-            </div>
-            <p class="theme-hint" id="themeHint">QR dinamis + nominal, nama toko, dan kota ditempel ke kartu bergambar.</p>
           </div>
 
           <!-- Status -->
@@ -1240,20 +1112,6 @@
 
   const stepEls = document.querySelectorAll('.step');
 
-  const themeGrid       = document.getElementById('themeGrid');
-  const themeCustom     = document.getElementById('themeCustom');
-  const themeHint       = document.getElementById('themeHint');
-  const bgDropzone      = document.getElementById('bgDropzone');
-  const bgInput         = document.getElementById('bgInput');
-  const bgEmpty         = document.getElementById('bgEmpty');
-  const bgPreview       = document.getElementById('bgPreview');
-  const bgPreviewImg    = document.getElementById('bgPreviewImg');
-  const bgNameText      = document.getElementById('bgNameText');
-  const bgSizeText      = document.getElementById('bgSizeText');
-  const bgReplace       = document.getElementById('bgReplace');
-  const bgClear         = document.getElementById('bgClear');
-  const bgPosRow        = document.getElementById('bgPosRow');
-
   let activeTab = 'upload';
   let nominalRaw = '';
   let currentQrisString = '';
@@ -1263,8 +1121,8 @@
   let runId = 0;                /* penanda agar proses lama tidak menimpa hasil baru */
 
   /* ============ THEME STATE ============ */
-  /* Tema kartu = background gambar + QR dinamis + nominal yang ditempel.
-     Dua pilihan: kartu Rimuru dari assets/themes/, atau background unggahan sendiri. */
+  /* Kartu selalu memakai tema Tiyanstore · Rimuru dari assets/themes/.
+     Tidak ditampilkan di UI: tidak ada pemilih tema / unggah background. */
   const THEME_BASE = 'assets/themes/';
 
   /*
@@ -1343,11 +1201,6 @@
   } /* THEME_FALLBACK_END */;
 
   let themeCatalog = [FALLBACK_THEME];
-  let selectedThemeId = FALLBACK_THEME.id;
-  let customBgFile = null;
-  let customBgUrl = null;       /* object URL untuk <img> background kustom */
-  let customBgImage = null;     /* HTMLImageElement yang sudah loaded */
-  let customQrPos = 'center';
   const themeImageCache = new Map();  /* id → HTMLImageElement */
   const themeLogoCache = new Map();   /* id → HTMLImageElement logo tengah QR */
 
@@ -1361,74 +1214,14 @@
   }
 
   function getSelectedTheme(){
-    if (selectedThemeId === 'custom') {
-      return {
-        id: 'custom',
-        type: 'custom',
-        name: 'Background sendiri',
-        position: customQrPos,
-      };
-    }
-    return themeCatalog.find(t => t.id === selectedThemeId) || themeCatalog[0];
-  }
-
-  function renderThemeGrid(){
-    if (!themeGrid) return;
-    const items = themeCatalog.slice();
-    /* kartu "custom" selalu di akhir */
-    items.push({
-      id: 'custom',
-      name: 'Upload sendiri',
-      type: 'custom',
-      description: 'Pakai gambar background kamu',
-    });
-
-    themeGrid.innerHTML = items.map(t => {
-      const active = t.id === selectedThemeId ? ' active' : '';
-      let thumb;
-      if (t.type === 'custom') {
-        thumb = '<div class="theme-thumb emoji" aria-hidden="true">🎨</div>';
-      } else if (t.thumb) {
-        thumb = '<img class="theme-thumb" src="' + THEME_BASE + t.thumb + '" alt="' + escapeHtml(t.name) + '" loading="lazy">';
-      } else if (t.image) {
-        thumb = '<img class="theme-thumb" src="' + THEME_BASE + t.image + '" alt="' + escapeHtml(t.name) + '" loading="lazy">';
-      } else {
-        thumb = '<div class="theme-thumb emoji" aria-hidden="true">✨</div>';
-      }
-      return (
-        '<button type="button" class="theme-card' + active + '" data-theme="' + escapeHtml(t.id) + '" role="option" aria-selected="' + (t.id === selectedThemeId) + '" title="' + escapeHtml(t.description || t.name) + '">' +
-          '<span class="theme-check">✓</span>' +
-          thumb +
-          '<span class="theme-name">' + escapeHtml(t.name) + '</span>' +
-        '</button>'
-      );
-    }).join('');
-  }
-
-  function setTheme(id){
-    /* "custom" selalu boleh; selain itu id harus ada di katalog tema */
-    const ids = themeCatalog.map(t => t.id);
-    selectedThemeId = (id === 'custom' || ids.indexOf(id) >= 0) ? id : (ids[0] || 'custom');
-    renderThemeGrid();
-    if (themeCustom) themeCustom.hidden = selectedThemeId !== 'custom';
-    const t = getSelectedTheme();
-    if (themeHint && t) {
-      if (t.type === 'custom') {
-        themeHint.textContent = 'Unggah background anime/desain kamu. QR dinamis + nominal, toko, dan kota ditempel otomatis.';
-      } else {
-        themeHint.textContent = (t.description || t.name) + ' — QR + nominal, toko, kota ditempel sesuai layout kartu.';
-      }
-    }
+    return themeCatalog.find(t => t.id === 'tiyanstore-rimuru') || themeCatalog[0] || FALLBACK_THEME;
   }
 
   async function ensureThemeBackground(theme){
-    if (!theme || !theme.type) throw new Error('Tema kartu tidak dikenali — muat ulang halaman lalu pilih tema lagi.');
-    if (theme.type === 'custom') {
-      if (!customBgImage) throw new Error('Unggah gambar background dulu sebelum membuat QRIS bertema.');
-      return customBgImage;
+    if (!theme || theme.type !== 'image' || !theme.image) {
+      throw new Error('Tema kartu tidak dikenali — muat ulang halaman.');
     }
     if (themeImageCache.has(theme.id)) return themeImageCache.get(theme.id);
-    if (!theme.image) throw new Error('Tema tidak punya berkas gambar');
     const img = await loadImage(THEME_BASE + theme.image);
     themeImageCache.set(theme.id, img);
     return img;
@@ -1463,90 +1256,6 @@
     } catch (err) {
       /* offline / file:// — pakai kartu Rimuru bawaan (FALLBACK_THEME) */
     }
-    /* kalau tema terpilih tidak ada lagi di katalog, pakai tema pertama */
-    const ids = themeCatalog.map(t => t.id);
-    setTheme(ids.indexOf(selectedThemeId) >= 0 ? selectedThemeId : ids[0]);
-  }
-
-  if (themeGrid) {
-    themeGrid.addEventListener('click', e => {
-      const card = e.target.closest('[data-theme]');
-      if (!card) return;
-      setTheme(card.getAttribute('data-theme'));
-    });
-  }
-
-  /* Background kustom */
-  function resetBgState(options){
-    options = options || {};
-    customBgFile = null;
-    customBgImage = null;
-    if (customBgUrl) { URL.revokeObjectURL(customBgUrl); customBgUrl = null; }
-    if (options.clearInput !== false && bgInput) bgInput.value = '';
-    if (bgEmpty) bgEmpty.style.display = 'block';
-    if (bgPreview) bgPreview.style.display = 'none';
-    if (bgDropzone) bgDropzone.classList.remove('has-file');
-    if (bgPreviewImg) bgPreviewImg.removeAttribute('src');
-  }
-
-  async function selectBgFile(file){
-    if (!file) { resetBgState(); return; }
-    resetBgState({ clearInput: false });
-    customBgFile = file;
-    if (bgNameText) bgNameText.textContent = file.name || 'background';
-    if (bgSizeText) bgSizeText.textContent = formatSize(file.size || 0);
-    if (bgEmpty) bgEmpty.style.display = 'none';
-    if (bgPreview) bgPreview.style.display = 'flex';
-    if (bgDropzone) bgDropzone.classList.add('has-file');
-    try {
-      customBgUrl = URL.createObjectURL(file);
-      const img = await loadImage(customBgUrl);
-      if (file !== customBgFile) return;
-      customBgImage = img;
-      if (bgPreviewImg) bgPreviewImg.src = customBgUrl;
-    } catch (err) {
-      if (file !== customBgFile) return;
-      customBgImage = null;
-      if (bgPreviewImg) bgPreviewImg.removeAttribute('src');
-    }
-  }
-
-  if (bgInput) {
-    bgInput.addEventListener('change', () => {
-      const file = bgInput.files && bgInput.files[0];
-      if (file) selectBgFile(file);
-    });
-  }
-  if (bgClear) bgClear.addEventListener('click', e => {
-    e.preventDefault(); e.stopPropagation();
-    resetBgState();
-  });
-  if (bgReplace) bgReplace.addEventListener('click', e => {
-    e.preventDefault(); e.stopPropagation();
-    resetBgState();
-    requestAnimationFrame(() => { try { bgInput.click(); } catch (err) {} });
-  });
-  if (bgDropzone) {
-    bgDropzone.addEventListener('dragover', e => { e.preventDefault(); bgDropzone.classList.add('drag'); });
-    bgDropzone.addEventListener('dragleave', e => { e.preventDefault(); bgDropzone.classList.remove('drag'); });
-    bgDropzone.addEventListener('drop', e => {
-      e.preventDefault();
-      bgDropzone.classList.remove('drag');
-      const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-      if (!file) return;
-      try { bgInput.files = e.dataTransfer.files; } catch (err) {}
-      selectBgFile(file);
-    });
-  }
-  if (bgPosRow) {
-    bgPosRow.addEventListener('click', e => {
-      const chip = e.target.closest('[data-pos]');
-      if (!chip) return;
-      customQrPos = chip.getAttribute('data-pos') || 'center';
-      bgPosRow.querySelectorAll('.pos-chip').forEach(c => {
-        c.classList.toggle('active', c === chip);
-      });
-    });
   }
 
   initThemes();
@@ -1764,9 +1473,9 @@
   function showQris(data){
     const result = data.result;
     /*
-      Info (nominal + toko + kota) selalu DIBake ke dalam gambar kartu
-      (Rimuru / background unggahan sendiri). Jadi teks di luar frame
-      disembunyikan dengan class .info-baked, kecuali kalau gambarnya gagal.
+      Info (nominal + toko + kota) selalu DIBake ke dalam gambar kartu.
+      Jadi teks di luar frame disembunyikan dengan class .info-baked,
+      kecuali kalau gambarnya gagal.
     */
     const infoBaked = !!(result.qris_url);
 
@@ -1989,16 +1698,14 @@
         return;
       }
 
-      /* 4) Tempel QR dinamis + nominal ke kartu bergambar (Rimuru / unggahan) */
+      /* 4) Tempel QR dinamis + nominal ke kartu Rimuru (tema bawaan, tanpa pemilih) */
       const theme = getSelectedTheme();
-      setStage('Menyusun kartu bertema…');
+      setStage('Menyusun kartu QRIS…');
       let background;
       try {
         background = await ensureThemeBackground(theme);
       } catch (bgErr) {
-        showError(bgErr.message, theme && theme.type === 'custom'
-          ? ['Klik “Upload sendiri”, pilih gambar background anime/desain kamu, lalu coba lagi.']
-          : ['Muat ulang halaman lalu pilih kartu Rimuru lagi.']);
+        showError(bgErr.message, ['Muat ulang halaman lalu coba lagi.']);
         return;
       }
       if (myRun !== runId) return;

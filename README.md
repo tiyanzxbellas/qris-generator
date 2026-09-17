@@ -63,9 +63,9 @@ penyimpanan HP lalu unggah dari Galeri/Files.
      **byte UTF-8** payload — nama merchant non-ASCII tetap valid.
 5. QR baru digambar ulang dengan [qrcode-generator](vendor/qrcode.min.js)
    (+ dukungan UTF-8, koreksi kesalahan `H` bila tema punya logo tengah), lalu
-   **ditempel ke kartu bergambar** — tema Rimuru bawaan atau background yang
-   kamu unggah — dengan **logo di tengah QR**. Di bawah QR ditulis berurutan:
-   nominal, nama toko, lalu kota/kabupaten (tag `59`/`60`).
+   **ditempel ke kartu bergambar Tiyanstore · Rimuru** (tema bawaan, tanpa
+   pemilih di halaman) dengan **logo di tengah QR**. Di bawah QR ditulis
+   berurutan: nominal, nama toko, lalu kota/kabupaten (tag `59`/`60`).
    String QRIS-nya juga disediakan untuk disalin.
 
    Presisi tempel: modul QR digambar dengan batas piksel bulat (tanpa celah/
@@ -95,16 +95,13 @@ untuk uji coba.
 3. Untuk HEIC: buka di Safari (iPhone/Mac) atau ekspor ulang dari aplikasi
    Foto sebagai JPG. Untuk AVIF di browser lama: ubah ke JPG/PNG.
 
-## Tema kartu (Tiyanstore / custom)
+## Tema kartu
 
-Hasil generate **selalu** berupa kartu bergambar: QR dinamis ditempel ke
-background (opsi “QR polos” sudah dihapus), lalu di bawah QR tertulis
-berurutan **nominal → nama toko → kota/kabupaten**:
-
-| Tema | Keterangan |
-|---|---|
-| Tiyanstore · Rimuru (bawaan) | Background anime Rimuru — QR di kiri **dengan logo Rimuru di tengahnya** (koreksi kesalahan `H`); di bawah label NOMINAL berurutan: nominal, nama toko, lalu kota/kabupaten |
-| Upload sendiri | Pakai background kamu (anime/foto/desain), posisi QR: tengah/kiri/kanan — teks dirapikan di bawah QR |
+Hasil generate **selalu** berupa kartu bergambar Tiyanstore · Rimuru
+(pemilih tema dan opsi unggah background sendiri tidak ditampilkan di
+halaman): QR dinamis ditempel ke background, lalu di bawah QR tertulis
+berurutan **nominal → nama toko → kota/kabupaten**. QR di kiri **dengan
+logo Rimuru di tengahnya** (koreksi kesalahan `H`).
 
 Semua digambar **di browser** (`THEME.compose` di `src/qris-core.js`): background + QR dinamis + teks nominal, nama toko (tag `59`), dan kota/kabupaten (tag `60`). Tidak ada unggahan ke server.
 
@@ -120,7 +117,7 @@ Folder tema: `assets/themes/` (`themes.json` + gambar). Tambah tema baru dengan 
 ```
 index.html             halaman + alur UI (muat gambar, pindai, tampilkan hasil)
 src/qris-core.js       logika inti tanpa DOM: PROBE, BYTES, IMG, SCAN, EMV, RENDER, THEME
-assets/themes/         katalog tema kartu (Tiyanstore/custom) + themes.json
+assets/themes/         tema kartu Tiyanstore · Rimuru + themes.json
 vendor/                library lokal: jsQR, qrcode-generator, libheif (wasm)
 test/                  pengujian Node + fixture gambar (PNG/JPG/HEIC/AVIF)
 ```

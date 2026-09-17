@@ -128,12 +128,15 @@ test('index.html: berkas rusak diperbaiki otomatis sebelum menyerah', () => {
   assert.ok(/repaired/.test(html), 'hasil perbaikan dilaporkan ke pengguna');
 });
 
-test('index.html: pemilih tema kartu QRIS tersedia', () => {
+test('index.html: tema kartu dipakai otomatis, tanpa pemilih di halaman', () => {
   ['themeGrid', 'themeCustom', 'bgInput', 'bgDropzone', 'bgPosRow']
-    .forEach(id => assert.ok(html.includes('id="' + id + '"'), 'elemen #' + id + ' hilang'));
+    .forEach(id => assert.ok(!html.includes('id="' + id + '"'), 'pemilih tema masih ada: #' + id));
+  assert.ok(!html.includes('Upload sendiri'), 'opsi unggah background sendiri masih ada di halaman');
+  assert.ok(!html.includes('Tema Kartu QRIS'), 'label pemilih tema masih terlihat');
   assert.ok(html.includes('CORE.THEME.compose'), 'hasil digambar lewat THEME.compose');
   assert.ok(html.includes('assets/themes/'), 'katalog tema dimuat dari folder lokal');
   assert.ok(html.includes('initThemes'), 'katalog tema diinisialisasi');
+  assert.ok(html.includes('getSelectedTheme'), 'tema Rimuru dipilih otomatis');
 });
 
 test('assets/themes: katalog berisi kartu Rimuru, tanpa tema polos', () => {
@@ -182,13 +185,14 @@ test('assets/themes: katalog berisi kartu Rimuru, tanpa tema polos', () => {
   });
 });
 
-test('index.html: opsi tema polos dibuang, sisa kartu Rimuru + upload sendiri', () => {
+test('index.html: opsi tema polos dan upload sendiri dibuang, Rimuru otomatis', () => {
   assert.ok(!html.includes('Polos (QR saja)'), 'kartu polos masih ada di halaman');
   assert.ok(!/type:\s*'plain'/.test(html), 'masih ada tema bertipe plain di halaman');
   assert.ok(!html.includes('layoutForPlain'), 'layout polos masih dipakai');
   assert.ok(!html.includes('CORE.RENDER.renderPNG'), 'halaman masih menggambar QR polos');
-  assert.ok(html.includes('tiyanstore-rimuru'), 'kartu Rimuru jadi tema bawaan');
-  assert.ok(html.includes('Upload sendiri'), 'pilihan unggah background sendiri tetap ada');
+  assert.ok(!html.includes('Upload sendiri'), 'pilihan unggah background sendiri masih ada');
+  assert.ok(!html.includes('theme-grid'), 'kisi pemilih tema masih ada');
+  assert.ok(html.includes('tiyanstore-rimuru'), 'kartu Rimuru jadi tema bawaan (di mesin, bukan di UI)');
   assert.ok(html.includes('CORE.THEME.compose'), 'kartu disusun lewat THEME.compose');
 });
 
