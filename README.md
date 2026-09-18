@@ -118,9 +118,41 @@ Folder tema: `assets/themes/` (`themes.json` + gambar). Tambah tema baru dengan 
 index.html             halaman + alur UI (muat gambar, pindai, tampilkan hasil)
 src/qris-core.js       logika inti tanpa DOM: PROBE, BYTES, IMG, SCAN, EMV, RENDER, THEME
 assets/themes/         tema kartu Tiyanstore · Rimuru + themes.json
+assets/img/            logo & ikon web (favicon, logo, banner share/og-image, manifest)
 vendor/                library lokal: jsQR, qrcode-generator, libheif (wasm)
 test/                  pengujian Node + fixture gambar (PNG/JPG/HEIC/AVIF)
 ```
+
+## SEO & logo web
+
+Branding pencarian & share memakai nama **Qgen** (nama tampil di judul halaman,
+`<h1>`, meta description, dan JSON-LD `WebApplication` + `WebSite`), supaya
+pencarian "Qgen"/"qgen" di Google dikenali sebagai aplikasi ini.
+
+Semua gambar pendukung disimpan **lokal di `assets/img/`** — tidak memakai CDN,
+jadi logo/banner tetap tampil walaupun tautan lama (mis. gambar di penyimpanan
+eksternal) sudah kedaluwarsa:
+
+| Berkas | Fungsi |
+|---|---|
+| `qgen-logo.png` | logo asli (master, 1254×1254) |
+| `logo.png` / `logo-192.png` | logo 512/192 px (manifest & header) |
+| `logo-maskable-512.png` | ikon maskable (Android/PWA) |
+| `favicon-32x32.png`, `favicon-16x16.png` | ikon tab browser |
+| `apple-touch-icon.png` | ikon bookmark/layar utama iOS |
+| `og-image.jpg` | banner 1200×630 saat link dibagikan (WhatsApp/Facebook/X) |
+| `site.webmanifest` | metadata PWA (nama, warna, ikon) |
+
+Tag di `<head>`: description + keywords, canonical, robots, Open Graph, Twitter
+Card, ikon, manifest, theme-color, dan JSON-LD (`<script type="application/ld+json">`).
+Selain itu ada blok `<noscript>` berisi penjelasan aplikasi untuk mesin pencari
+dan browser tanpa JavaScript.
+
+Agar cepat terindeks Google: daftarkan URL situs di
+[Google Search Console](https://search.google.com/search-console) lalu minta
+pengindeksan. Kalau domain produksi berubah (bukan
+`https://qris-generator-three.vercel.app/`), perbarui URL di tag `canonical`,
+`og:url`, `og:image`, `twitter:image`, dan blok JSON-LD.
 
 ## Uji
 

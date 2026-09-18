@@ -1,0 +1,16 @@
+{
+  "name": "Qgen — Generator QRIS Dinamis",
+  "short_name": "Qgen",
+  "description": "Ubah gambar QRIS statis jadi QRIS dinamis dengan nominal sendiri. 100% di browser, tanpa server.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050a08",
+  "theme_color": "#050a08",
+  "lang": "id",
+  "icons": [
+    { "src": "favicon-32x32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "logo-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "logo-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
