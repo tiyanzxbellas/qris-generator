@@ -3,7 +3,79 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QRIS Generator</title>
+<title>Qgen — Generator QRIS Dinamis dari Gambar QRIS Statis</title>
+<meta name="description" content="Qgen (QRIS Generator) — ubah gambar QRIS statis jadi QRIS dinamis dengan nominal sendiri. Cukup unggah foto QRIS, tulis nominal, langsung jadi. 100% diproses di browser, tanpa server, cepat &amp; gratis.">
+<meta name="keywords" content="qgen, qris generator, generator qris, qris dinamis, qris statis, ubah qris, buat qris, qris nominal, qris online, qrisku">
+<meta name="author" content="Tiyanstore">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#050a08">
+<link rel="canonical" href="https://qris-generator-three.vercel.app/">
+
+<!-- Logo / ikon web (folder assets/img/) -->
+<link rel="icon" type="image/png" sizes="32x32" href="assets/img/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/img/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/img/logo-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/img/apple-touch-icon.png">
+<link rel="manifest" href="assets/img/site.webmanifest">
+
+<!-- Open Graph: logo & banner muncul saat link di-share (WhatsApp, Facebook, Discord, dll) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Qgen">
+<meta property="og:title" content="Qgen — Generator QRIS Dinamis">
+<meta property="og:description" content="Ubah QRIS statis jadi dinamis dengan nominal sendiri. Cepat, gratis, 100% di browser tanpa server.">
+<meta property="og:url" content="https://qris-generator-three.vercel.app/">
+<meta property="og:image" content="https://qris-generator-three.vercel.app/assets/img/og-image.jpg">
+<meta property="og:image:secure_url" content="https://qris-generator-three.vercel.app/assets/img/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Logo Qgen — Generator QRIS Dinamis dari QRIS statis">
+<meta property="og:locale" content="id_ID">
+
+<!-- Twitter/X card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Qgen — Generator QRIS Dinamis">
+<meta name="twitter:description" content="Ubah QRIS statis jadi dinamis dengan nominal sendiri. Cepat, gratis, 100% di browser tanpa server.">
+<meta name="twitter:image" content="https://qris-generator-three.vercel.app/assets/img/og-image.jpg">
+<meta name="twitter:image:alt" content="Logo Qgen — Generator QRIS Dinamis dari QRIS statis">
+
+<!-- Data terstruktur: bikin "Qgen" dikenali mesin pencari (Google) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://qris-generator-three.vercel.app/#website",
+      "url": "https://qris-generator-three.vercel.app/",
+      "name": "Qgen",
+      "alternateName": ["Qgen QRIS", "QRIS Generator", "Generator QRIS Tiyanstore"],
+      "description": "Ubah gambar QRIS statis jadi QRIS dinamis dengan nominal sendiri, langsung di browser tanpa server.",
+      "inLanguage": "id-ID",
+      "publisher": { "@id": "https://qris-generator-three.vercel.app/#app" }
+    },
+    {
+      "@type": "WebApplication",
+      "@id": "https://qris-generator-three.vercel.app/#app",
+      "name": "Qgen",
+      "alternateName": "QRIS Generator",
+      "url": "https://qris-generator-three.vercel.app/",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Any (web browser)",
+      "browserRequirements": "Requires JavaScript",
+      "inLanguage": "id-ID",
+      "description": "Generator QRIS dinamis dari gambar QRIS statis. Unggah foto QRIS, tulis nominal, unduh hasilnya. 100% diproses di browser tanpa server.",
+      "featureList": [
+        "Ubah QRIS statis menjadi QRIS dinamis dengan nominal sendiri",
+        "Membaca PNG, JPG, WebP, BMP, GIF, HEIC (foto iPhone), dan AVIF",
+        "Perbaikan otomatis berkas QRIS yang terpotong atau rusak",
+        "Kartu QRIS bergambar siap dibagikan",
+        "Semua proses di browser, gambar QRIS tidak dikirim ke server"
+      ],
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "IDR" }
+    }
+  ]
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -135,15 +207,14 @@
 
   /* ============ HEADER ============ */
   .header{ text-align:center; margin-bottom: 26px; }
-  .logo{
-    width: 46px; height: 46px; margin: 0 auto 14px;
-    display:grid; grid-template-columns: repeat(3,1fr); grid-template-rows: repeat(3,1fr);
-    gap: 3px;
+  .logo-img{
+    width: 84px; height: 84px; margin: 0 auto 14px; display:block;
+    border-radius: 22px;
+    box-shadow:
+      0 0 0 1px var(--line),
+      0 10px 34px rgba(45,212,255,.22),
+      0 6px 24px rgba(0,255,163,.14);
   }
-  .logo span{ border-radius: 2px; background: var(--surface-2); }
-  .logo span:nth-child(1), .logo span:nth-child(3),
-  .logo span:nth-child(7){ background: var(--green); box-shadow: 0 0 8px var(--green-glow); }
-  .logo span:nth-child(9){ background: var(--blue); box-shadow: 0 0 8px var(--blue-glow); }
 
   .header h1{
     font-size: 23px; font-weight: 700; letter-spacing: -.01em;
@@ -151,6 +222,16 @@
   .header p{
     color: var(--text-muted); font-size: 13.5px; margin-top: 6px;
   }
+
+  /* Konten cadangan SEO (tampil hanya tanpa JavaScript) */
+  .seo-noscript{
+    max-width: 720px; margin: 0 auto 26px; padding: 18px 22px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    color: var(--text-muted); line-height: 1.7; font-size: 14px; text-align: left;
+  }
+  .seo-noscript h2{ color: var(--text); font-size: 17px; margin-bottom: 10px; }
+  .seo-noscript p + p{ margin-top: 10px; }
+
 
   /* ============ STEPPER ============ */
   .stepper{
@@ -575,14 +656,30 @@
   <div class="app" id="app">
     <div class="container">
 
+      <!-- Konten cadangan untuk mesin pencari & browser tanpa JavaScript -->
+      <noscript>
+        <section class="seo-noscript">
+          <h2>Qgen — Generator QRIS Dinamis dari Gambar QRIS Statis</h2>
+          <p>
+            Qgen (QRIS Generator) adalah aplikasi web gratis untuk mengubah gambar
+            <strong>QRIS statis</strong> menjadi <strong>QRIS dinamis</strong>: pilih foto atau berkas QRIS
+            (PNG, JPG, WebP, HEIC foto iPhone, AVIF) atau tempel URL gambarnya, tulis nominal pembayaran,
+            lalu Qgen menghasilkan ulang kode QRIS dengan nominal tersebut — lengkap dengan kartu QR
+            bergambar siap dibagikan.
+          </p>
+          <p>
+            Seluruh proses berjalan <strong>100% di browser (tanpa server/API)</strong>: gambar QRIS-mu tidak
+            diunggah ke mana pun. Mendukung perbaikan otomatis berkas yang terpotong/rusak dan pemindaian
+            QR multi-tahap.
+          </p>
+          <p>Qgen butuh JavaScript untuk berjalan — aktifkan JavaScript di browser-mu, lalu muat ulang halaman ini.</p>
+        </section>
+      </noscript>
+
       <div class="header">
-        <div class="logo" aria-hidden="true">
-          <span></span><span></span><span></span>
-          <span></span><span></span><span></span>
-          <span></span><span></span><span></span>
-        </div>
-        <h1>QRIS Generator</h1>
-        <p>QRIS dinamis dari gambar QRIS statis</p>
+        <img class="logo-img" src="assets/img/logo-192.png" alt="Logo Qgen — Generator QRIS Dinamis" width="84" height="84">
+        <h1>Qgen — QRIS Generator</h1>
+        <p>QRIS dinamis dari gambar QRIS statis — 100% di browser, tanpa server</p>
       </div>
 
       <div class="stepper" id="stepper">

@@ -50,15 +50,63 @@ test('index.html: dekoder HEIC dimuat dari berkas lokal, bukan CDN', () => {
 });
 
 test('index.html: skrip inline bebas galat sintaks', () => {
-  const blocks = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]);
+  const blocks = [...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)]
+    .map(m => ({ attrs: m[1], code: m[2] }))
+    .filter(b => !/\bsrc=/.test(b.attrs));
   assert.ok(blocks.length >= 1, 'ada skrip inline');
-  blocks.forEach((code, i) => {
+  blocks.forEach((b, i) => {
+    if (/type="application\/ld\+json"/.test(b.attrs)) return; /* JSON-LD divalidasi sebagai JSON di uji terpisah */
     try {
-      new Function(code);   /* dikompilasi, tidak dijalankan */
+      new Function(b.code);   /* dikompilasi, tidak dijalankan */
     } catch (err) {
       throw new Error('blok skrip inline #' + (i + 1) + ': ' + err.message);
     }
   });
+});
+
+test('index.html: JSON-LD valid dan memperkenalkan Qgen ke mesin pencari', () => {
+  const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(m => m[1]);
+  assert.ok(blocks.length >= 1, 'ada blok JSON-LD');
+  blocks.forEach((code, i) => {
+    let data;
+    assert.doesNotThrow(() => { data = JSON.parse(code); }, 'JSON-LD #' + (i + 1) + ' harus JSON valid');
+    assert.strictEqual(data['@context'], 'https://schema.org');
+    assert.ok(JSON.stringify(data).includes('Qgen'), 'JSON-LD menyebut nama Qgen');
+  });
+});
+
+test('index.html: tag SEO & Open Graph lengkap dengan gambar absolut', () => {
+  ['name="description"', 'rel="canonical"', 'property="og:title"', 'property="og:image"',
+   'property="og:image:alt"', 'name="twitter:card"', 'name="twitter:image"']
+    .forEach(fragmen => assert.ok(html.includes(fragmen), 'meta hilang: ' + fragmen));
+  const ogImage = (html.match(/property="og:image" content="([^"]+)"/) || [])[1] || '';
+  assert.ok(/^https:\/\//.test(ogImage), 'og:image harus URL absolut (muncul di WhatsApp/dll)');
+  assert.ok(ogImage.includes('assets/img/og-image.jpg'), 'og-image disimpan di folder aset sendiri');
+  assert.ok(fs.existsSync(path.join(ROOT, 'assets/img/og-image.jpg')), 'berkas og-image.jpg ada');
+});
+
+test('assets/img: logo & favicon yang dirujuk head semuanya ada', () => {
+  const hrefs = [...html.matchAll(/<link[^>]+href="(assets\/img\/[^"]+)"/g)].map(m => m[1]);
+  assert.ok(hrefs.length >= 4, 'head merujuk beberapa aset img, dapat ' + hrefs.length);
+  hrefs.forEach(href => assert.ok(fs.existsSync(path.join(ROOT, href)), 'aset hilang: ' + href));
+  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'assets/img/site.webmanifest'), 'utf8'));
+  assert.strictEqual(manifest.short_name, 'Qgen');
+  manifest.icons.forEach(icon => {
+    assert.ok(fs.existsSync(path.join(ROOT, 'assets/img', icon.src)), 'ikon manifest hilang: ' + icon.src);
+  });
+});
+
+test('index.html: header memakai logo Qgen dan h1 menyebut Qgen', () => {
+  assert.ok(/<img class="logo-img" src="assets\/img\/logo-192\.png"/.test(html), 'header memakai logo gambar dari assets/img');
+  assert.ok(/<h1>[^<]*Qgen/.test(html), 'h1 menyebut Qgen');
+  assert.ok(!html.includes('<div class="logo" aria-hidden'), 'logo grid lama sudah diganti');
+});
+
+test('index.html: konten cadangan noscript untuk mesin pencari', () => {
+  assert.ok(html.includes('<noscript>'), 'ada blok noscript');
+  const noscript = html.match(/<noscript>([\s\S]*?)<\/noscript>/)[1];
+  assert.ok(noscript.includes('Qgen'), 'noscript memperkenalkan Qgen');
+  assert.ok(noscript.includes('QRIS dinamis'), 'noscript menjelaskan fitur inti');
 });
 
 test('index.html: kurung kurawal CSS seimbang', () => {
